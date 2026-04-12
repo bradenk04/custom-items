@@ -2,6 +2,12 @@ name: build.yml
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'build.gradle.kts'
+      - 'gradle.properties'
+      - 'settings.gradle.kts'
+      - 'gradle/**'
   pull_request:
     branches: [ main ]
   workflow_dispatch:
