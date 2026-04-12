@@ -19,10 +19,16 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}  # to check out the actual pull request commit, not the merge commit
           fetch-depth: 0  # a full history is required for pull request analysis
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'corretto'
       - name: 'Qodana Scan'
         uses: JetBrains/qodana-action@v2025.3
         with:
           pr-mode: false
+          args: "-v ${{ env.JAVA_HOME }}:/root/.jdks/corretto-25:ro"
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN_1095461449 }}
           QODANA_ENDPOINT: 'https://qodana.cloud'
