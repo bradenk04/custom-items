@@ -13,12 +13,18 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("26.1.2.build.+")
+    paperweight.paperDevBundle("26.1.build.+")
+    implementation("com.electronwill.night-config:core:3.8.4")
+    implementation("com.electronwill.night-config:toml:3.8.4")
+    implementation("io.github.revxrsal:lamp.common:4.0.0-rc16")
+    implementation("io.github.revxrsal:lamp.bukkit:4.0.0-rc16")
+    implementation("io.github.revxrsal:lamp.brigadier:4.0.0-rc16")
+    implementation("io.github.revxrsal:lamp.paper:4.0.0-rc16")
 }
 
 paperPluginYaml {
     main = "me.bradenk.customItems.CustomItems"
-    apiVersion = "26.1.2"
+    apiVersion = "26.1"
 
     load = BukkitPluginYaml.PluginLoadOrder.STARTUP
     authors.addAll("bradenk04", "Stryff")
@@ -39,7 +45,10 @@ tasks {
         // Configure the Minecraft version for our task.
         // This is the only required configuration besides applying the plugin.
         // Your plugin's jar (or shadowJar if present) will be used automatically.
-        minecraftVersion("26.1.2")
+        minecraftVersion("26.1")
         jvmArgs("-Xms2G", "-Xmx2G", "-Dcom.mojang.eula.agree=true")
+    }
+    withType<JavaCompile> {
+        options.compilerArgs.add("-parameters")
     }
 }
