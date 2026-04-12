@@ -118,4 +118,29 @@ public class ItemEditCommand {
                 Component.text("Lore has been removed.", NamedTextColor.GREEN)
         );
     }
+
+    @Subcommand("lore line set")
+    public void setLoreLine(BukkitCommandActor actor, int line, String lineText) {
+        if (!actor.isPlayer()) {
+            actor.sendRawMessage("You must be a player to edit an item!");
+            return;
+        }
+        Player player = actor.asPlayer();
+        if (player == null) {
+            throw new IllegalStateException("Player is null after checking if it is a player!");
+        }
+        ItemStack item = player.getInventory().getItemInMainHand();
+        ItemMeta meta = item.getItemMeta();
+        List<Component> lore = meta.lore();
+        if (lore == null) {
+            throw new IllegalStateException("You must be a player to edit an item!");
+        }
+        lore.set(line - 1, miniMessage.deserialize(lineText).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
+        meta.lore(lore);
+        item.setItemMeta(meta);
+        player.getInventory().setItemInMainHand(item);
+        player.sendMessage(
+                Component.text("Lore has been updated.", NamedTextColor.GREEN)
+        );
+    }
 }
