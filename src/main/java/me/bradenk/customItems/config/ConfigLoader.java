@@ -26,6 +26,7 @@ public class ConfigLoader {
                 CustomItems.instance.getLogger().severe("Failed to create plugin folder!");
                 throw new IllegalStateException("Failed to create plugin folder!");
             }
+            CustomItems.instance.saveResource("config.toml", false);
         }
 
         if (!itemsConfigFolder.exists()) {
@@ -34,6 +35,8 @@ public class ConfigLoader {
                 CustomItems.instance.getLogger().severe("Failed to create items config folder!");
                 throw new IllegalStateException("Failed to create items config folder!");
             }
+            CustomItems.instance.saveResource("items/cool_diamond_sword.toml", false);
+            CustomItems.instance.saveResource("items/awesome_netherite_sword.toml", false);
         }
 
         Path itemsConfigPath = itemsConfigFolder.toPath();
@@ -54,6 +57,7 @@ public class ConfigLoader {
                 continue;
             }
             customItems.put(item.getId(), item);
+            CustomItems.instance.getLogger().info("Loaded item: " + item.getId());
         }
     }
 
