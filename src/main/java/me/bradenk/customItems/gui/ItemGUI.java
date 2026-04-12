@@ -26,21 +26,21 @@ public class ItemGUI {
         }
 
         gui.setItem(10, makeButton(Material.NAME_TAG, Component.text("Display Name: ").color(NamedTextColor.GOLD)
-                .append(CustomItems.instance.getSessions().get(player.getUniqueId()).getDisplayName().color(NamedTextColor.YELLOW)), List.of(Component.empty())));
+                .append(CustomItems.instance.getSession(player.getUniqueId()).getDisplayName().color(NamedTextColor.YELLOW)), List.of(Component.empty())));
 
-        gui.setItem(12, makeButton(CustomItems.instance.getSessions().get(player.getUniqueId()).getMaterial(), Component.text("Material: ").color(NamedTextColor.GOLD)
-                .append(Component.text(CustomItems.instance.getSessions().get(player.getUniqueId()).getMaterial().getKey().getKey().toUpperCase()).color(NamedTextColor.YELLOW)), List.of(Component.empty())));
+        gui.setItem(12, makeButton(CustomItems.instance.getSession(player.getUniqueId()).getMaterial(), Component.text("Material: ").color(NamedTextColor.GOLD)
+                .append(Component.text(CustomItems.instance.getSession(player.getUniqueId()).getMaterial().getKey().getKey().toUpperCase()).color(NamedTextColor.YELLOW)), List.of(Component.empty())));
 
         gui.setItem(14, makeButton(Material.OAK_SIGN,
                 Component.text("Lore: ").color(NamedTextColor.GOLD).append(Component.space()),
-                CustomItems.instance.getSessions().get(player.getUniqueId()).getLore()
+                CustomItems.instance.getSession(player.getUniqueId()).getLore()
         ));
 
         gui.setItem(19, makeButton(Material.LEVER, Component.text("Unbreakable: ").color(NamedTextColor.GOLD)
-                .append(Component.text(CustomItems.instance.getSessions().get(player.getUniqueId()).isUnbreakable()).color(NamedTextColor.YELLOW)), List.of(Component.empty())));
+                .append(Component.text(CustomItems.instance.getSession(player.getUniqueId()).isUnbreakable()).color(NamedTextColor.YELLOW)), List.of(Component.empty())));
 
         gui.setItem(21, makeButton(Material.ENCHANTED_BOOK, Component.text("Enchantments: ").color(NamedTextColor.GOLD)
-                .append(Component.space()), TextUtils.enchantComponents(CustomItems.instance.getSessions().get(player.getUniqueId()).getEnchantments())));
+                .append(Component.space()), TextUtils.enchantComponents(CustomItems.instance.getSession(player.getUniqueId()).getEnchantments())));
 
         gui.setItem(40, makeButton(Material.DISPENSER, Component.text("Give Item").color(NamedTextColor.GOLD), List.of(Component.empty())));
 

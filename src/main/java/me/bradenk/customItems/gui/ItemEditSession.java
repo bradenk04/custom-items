@@ -84,8 +84,10 @@ public class ItemEditSession {
         this.unbreakable = unbreakable;
     }
 
-    public CustomItem toCustomItem() {
-        return new CustomItem(displayName, material, enchantments, lore, customModelData, unbreakable);
-    }
+//    public CustomItem toCustomItem() {
+//
+//
+//        return new CustomItem(displayName, material, enchantments, lore, customModelData, unbreakable);
+//    }
 }
 
