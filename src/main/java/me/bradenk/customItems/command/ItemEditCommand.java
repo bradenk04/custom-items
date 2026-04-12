@@ -110,6 +110,7 @@ public class ItemEditCommand {
         if (lore == null) {
             throw new IllegalStateException("You must be a player to edit an item!");
         }
+        lore.remove(line - 1);
         meta.lore(lore);
         item.setItemMeta(meta);
         player.getInventory().setItemInMainHand(item);
