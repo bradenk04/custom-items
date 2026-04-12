@@ -201,10 +201,10 @@ public class CustomItem {
         ItemMeta meta = item.getItemMeta();
         meta.setUnbreakable(unbreakable);
         if (displayName != null) {
-            meta.displayName(displayName);
+            meta.displayName(displayName.decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
         }
         if (lore != null) {
-            List<Component> finalLore = new ArrayList<>(lore);
+            List<Component> finalLore = lore.stream().map(component -> component.decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE)).toList();
             if (enchantments != null && !enchantments.isEmpty()) {
                 finalLore.add(Component.text(" "));
                 List<String> enchantList = new ArrayList<>();

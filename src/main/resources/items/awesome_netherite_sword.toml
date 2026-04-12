@@ -2,3 +2,10 @@ id = "awesome_netherite_sword"
 
 [general]
 material = "minecraft:netherite_sword"
+display_name = "<rainbow>Awesome Netherite Sword"
+lore = [
+    "<green>This netherite sword is",
+    "<green>awesome!",
+    "",
+    "<rainbow>wow!"
+]
