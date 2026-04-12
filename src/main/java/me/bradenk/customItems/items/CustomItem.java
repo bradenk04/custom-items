@@ -89,9 +89,10 @@ public class CustomItem {
             lore = loreRaw.get().stream().map(miniMessage::deserialize).toList();
         }
 
-        Material mat = Material.getMaterial(config.get("general.material"));
+        String materialRaw = config.get("general.material");
+        Material mat = Material.matchMaterial(materialRaw);
         if (mat == null) {
-            CustomItems.instance.getLogger().warning("Material " + config.get("general.material") + " does not exist!");
+            CustomItems.instance.getLogger().warning("Material " + materialRaw + " does not exist!");
             return null;
         }
 

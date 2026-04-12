@@ -1,2 +1,4 @@
 id = "awesome_netherite_sword"
+
+[general]
 material = "minecraft:netherite_sword"
