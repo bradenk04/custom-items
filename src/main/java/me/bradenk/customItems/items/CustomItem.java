@@ -283,6 +283,7 @@ public class CustomItem {
 
             StringBuilder lineBuilder = new StringBuilder();
             int count = 0;
+            boolean firstEnchantLine = true;
 
             for (int i = 0; i < enchantList.size(); i++) {
                 String enchantStr = enchantList.get(i);
@@ -299,11 +300,16 @@ public class CustomItem {
                 boolean reachedEnchantLimit = count >= 3;
 
                 if (nextWouldOverflow || reachedEnchantLimit || i == enchantList.size() - 1) {
-                    finalLore.add(
-                            Component.text(lineBuilder.toString())
-                                    .color(NamedTextColor.BLUE)
-                                    .decoration(TextDecoration.ITALIC, false)
-                    );
+                    Component line = Component.text(lineBuilder.toString())
+                            .color(NamedTextColor.BLUE)
+                            .decoration(TextDecoration.ITALIC, false);
+
+                    if (firstEnchantLine) {
+                        line = line.append(Component.text("[[ENCHANTS]]").color(NamedTextColor.BLACK));
+                        firstEnchantLine = false;
+                    }
+
+                    finalLore.add(line);
                     lineBuilder.setLength(0);
                     count = 0;
                 }

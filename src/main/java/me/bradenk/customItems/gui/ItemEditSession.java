@@ -39,7 +39,12 @@ public class ItemEditSession {
         this.displayName = name == null ? Component.text("None") : name;
         this.material = material == null ? Material.STONE : material;
         this.enchantments = enchantments == null ? new ConcurrentHashMap<>() : new ConcurrentHashMap<>(enchantments);
-        this.lore = lore == null ? new ArrayList<>() : new ArrayList<>(lore);
+        boolean useVanilla = ConfigLoader.getMainConfig()
+                .get("use_vanilla_enchants_in_lore") instanceof Boolean b && b;
+
+        this.lore = useVanilla
+                ? new ArrayList<>(lore)
+                : stripGeneratedEnchantLore(lore);
         this.unbreakable = unbreakable;
         this.customModelData = cmd == null ? new ArrayList<>() : new ArrayList<>(cmd);
     }
@@ -48,14 +53,17 @@ public class ItemEditSession {
         this.id = item.getId();
         this.displayName = item.getName();
         this.material = item.getMaterial();
-        this.enchantments = item.getEnchantments() == null
-                ? new ConcurrentHashMap<>()
-                : new ConcurrentHashMap<>(item.getEnchantments());
-        this.lore = stripGeneratedEnchantLore(item.getLore(), this.enchantments);
+        this.enchantments = item.getEnchantments();
+
+        boolean useVanilla = ConfigLoader.getMainConfig()
+                .get("use_vanilla_enchants_in_lore") instanceof Boolean b && b;
+
+        this.lore = useVanilla
+                ? new ArrayList<>(item.getLore())
+                : stripGeneratedEnchantLore(item.getLore());
+
         this.unbreakable = item.isUnbreakable();
-        this.customModelData = item.getCustomModelData() == null
-                ? new ArrayList<>()
-                : new ArrayList<>(item.getCustomModelData());
+        this.customModelData = item.getCustomModelData();
     }
 
     public Component getDisplayName() {
@@ -111,44 +119,29 @@ public class ItemEditSession {
         return item;
     }
 
-    private List<Component> stripGeneratedEnchantLore(List<Component> originalLore, ConcurrentHashMap<Enchantment, Integer> enchantments) {
+
+    private List<Component> stripGeneratedEnchantLore(List<Component> originalLore) {
         if (originalLore == null || originalLore.isEmpty()) {
             return new ArrayList<>();
         }
-        if (enchantments == null || enchantments.isEmpty()) {
-            return new ArrayList<>(originalLore);
-        }
 
-        List<Component> cleaned = new ArrayList<>(originalLore);
+        List<Component> cleaned = new ArrayList<>();
 
-        cleaned.removeIf(component -> {
-            String plain = PlainTextComponentSerializer.plainText().serialize(component).trim();
-            if (plain.isEmpty()) {
-                return false;
+        for (Component component : originalLore) {
+            String plain = PlainTextComponentSerializer.plainText().serialize(component);
+
+            if (plain.contains("[[ENCHANTS]]")) {
+                break;
             }
 
-            for (Enchantment enchantment : enchantments.keySet()) {
-                Integer level = enchantments.get(enchantment);
-                if (level == null) {
-                    continue;
-                }
-
-                String key = enchantment.getKey().getKey();
-                if (plain.equalsIgnoreCase(key + " " + level) || plain.equalsIgnoreCase("- " + key + " " + level)) {
-                    return true;
-                }
-            }
-
-            return false;
-        });
-
-        while (!cleaned.isEmpty() && PlainTextComponentSerializer.plainText().serialize(cleaned.getLast()).trim().isEmpty()) {
-            cleaned.removeLast();
+            cleaned.add(component);
         }
 
-        for (Component component : cleaned) {
-            Bukkit.broadcast(component);
+        while (!cleaned.isEmpty()
+                && PlainTextComponentSerializer.plainText().serialize(cleaned.get(cleaned.size() - 1)).trim().isEmpty()) {
+            cleaned.remove(cleaned.size() - 1);
         }
+
         return cleaned;
     }
 }

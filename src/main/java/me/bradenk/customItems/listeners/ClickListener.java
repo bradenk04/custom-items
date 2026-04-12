@@ -6,6 +6,7 @@ import me.bradenk.customItems.items.CustomItem;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -175,6 +176,7 @@ public class ClickListener implements Listener {
         PendingAnvilInput pending = pendingInputs.get(player.getUniqueId());
         if (pending == null) return;
 
+        player.setItemOnCursor(null);
         event.setCancelled(true);
 
         if (event.getClick() == ClickType.NUMBER_KEY) return;
@@ -204,6 +206,7 @@ public class ClickListener implements Listener {
 
         pending.setReopenEditor(false);
         pendingInputs.remove(player.getUniqueId());
+        event.getView().getTopInventory().clear();
         player.closeInventory();
 
         Bukkit.getScheduler().runTask(plugin, () -> {
@@ -219,6 +222,8 @@ public class ClickListener implements Listener {
 
         PendingAnvilInput pending = pendingInputs.get(player.getUniqueId());
         if (pending == null) return;
+
+        event.getView().getTopInventory().clear();
 
         Bukkit.getScheduler().runTask(plugin, () -> {
             if (pendingInputs.containsKey(player.getUniqueId())) {
@@ -260,7 +265,7 @@ public class ClickListener implements Listener {
     }
 
     private boolean applyDisplayName(ItemEditSession session, String input, Player player) {
-        session.setDisplayName(CustomItems.colorCode(input));
+        session.setDisplayName(MiniMessage.miniMessage().deserialize(input));
         player.sendMessage(Component.text("Updated display name."));
         return true;
     }
@@ -282,7 +287,7 @@ public class ClickListener implements Listener {
         for (String part : input.split("\\|")) {
             String trimmed = part.trim();
             if (!trimmed.isEmpty()) {
-                lore.add(CustomItems.colorCode(trimmed));
+                lore.add(MiniMessage.miniMessage().deserialize(trimmed));
             }
         }
         session.setLore(lore);
