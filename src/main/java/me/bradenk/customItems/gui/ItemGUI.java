@@ -55,12 +55,12 @@ public class ItemGUI {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.displayName(name.decoration(TextDecoration.ITALIC, false));
-
             List<Component> finalLore = new ArrayList<>();
-            for (Component component : lore) {
-                finalLore.add(Component.text("- ", NamedTextColor.YELLOW).append(component));
+            if (material == Material.OAK_SIGN) {
+                for (Component component : lore) {
+                    finalLore.add(Component.text("- ", NamedTextColor.YELLOW).append(component));
+                }
             }
-
             meta.lore(finalLore);
             item.setItemMeta(meta);
             item.setAmount(1);
