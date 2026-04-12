@@ -1,11 +1,13 @@
 package me.bradenk.customItems.items;
 
+import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import me.bradenk.customItems.CustomItems;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -25,23 +27,74 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class CustomItem {
+    private CommentedFileConfig config;
 
+    private static final MiniMessage miniMessage = MiniMessage.miniMessage();
+    private String id;
     private Component displayName;
     private Material material;
-    private int amount;
     private ConcurrentHashMap<Enchantment, Integer> enchantments;
     private List<Component> lore;
     private List<Float> customModelData;
     private boolean unbreakable;
 
-    private CustomItem(Component name, Material material, int amount, ConcurrentHashMap<Enchantment, Integer> enchantments, List<Component> lore, List<Float> cmd, boolean unbreakable) {
+    private CustomItem(
+            CommentedFileConfig config,
+            String id,
+            Component name,
+            Material material,
+            ConcurrentHashMap<Enchantment, Integer> enchantments,
+            List<Component> lore,
+            List<Float> cmd,
+            boolean unbreakable
+    ) {
+        this.config = config;
+        this.id = id;
         this.displayName = name;
         this.material = material;
-        this.amount = amount;
         this.enchantments = enchantments;
         this.lore = lore;
-        this.unbreakable = unbreakable;
         this.customModelData = cmd;
+        this.unbreakable = unbreakable;
+    }
+    public static CustomItem from(CommentedFileConfig config) {
+
+        HashMap<String, Integer> enchantmentsRaw = config.get("general.enchantments");
+        ConcurrentHashMap<Enchantment, Integer> enchantments = new ConcurrentHashMap<>();
+        enchantmentsRaw.forEach((enchantName, level) -> {
+            NamespacedKey key;
+            if (enchantName.contains(":")) {
+                String firstPart = enchantName.split(":")[0];
+                String secondPart = enchantName.split(":")[1];
+                key = new NamespacedKey(firstPart, secondPart);
+            } else {
+                key = NamespacedKey.minecraft(enchantName);
+            }
+            Enchantment enchant = RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(key);
+            if (enchant == null) {
+                CustomItems.instance.getLogger().warning("Enchantment " + enchantName + " does not exist!");
+                return;
+            }
+            enchantments.put(enchant, level);
+        });
+
+        List<String> loreRaw = config.get("general.lore");
+        List<Component> lore = loreRaw.stream().map(miniMessage::deserialize).toList();
+
+        return new CustomItem(
+                config,
+                config.get("id"),
+                miniMessage.deserialize(config.get("general.display_name")),
+                Material.getMaterial(config.get("general.material")),
+                enchantments,
+                lore,
+                config.get("general.custom_model_data"),
+                config.get("general.unbreakable")
+        );
+    }
+
+    public String getId() {
+        return id;
     }
 
     public Component getName() {
@@ -50,10 +103,12 @@ public class CustomItem {
 
     public void rename(Component component) {
         displayName = component;
+        config.set("general.display_name", miniMessage.serialize(displayName));
     }
 
     public void setLore(Component[] lore) {
         this.lore = Arrays.asList(lore);
+        config.set("general.lore", Arrays.stream(lore).map(miniMessage::serialize).toList());
     }
 
     public Component[] getLore() {
@@ -62,22 +117,17 @@ public class CustomItem {
 
     public void addLore(Component... lore) {
         this.lore.addAll(Arrays.asList(lore));
+        setLore(this.lore.toArray(new Component[0]));
     }
 
     public void addLore(Component lore) {
         this.lore.add(lore);
-    }
-
-    public void setAmount(int amount) {
-        this.amount = amount;
-    }
-
-    public int getAmount() {
-        return amount;
+        setLore(this.lore.toArray(new Component[0]));
     }
 
     public void setCustomModelData(List<Float> data) {
         this.customModelData = data;
+        config.set("general.custom_model_data", data);
     }
 
     public List<Float> getCustomModelData() {
@@ -86,23 +136,34 @@ public class CustomItem {
 
     public void setUnbreakable(boolean value) {
         this.unbreakable = value;
+        config.set("general.unbreakable", value);
     }
     public boolean isUnbreakable() {
         return unbreakable;
     }
 
+    private HashMap<String, Integer> enchantListToConfigurableList(ConcurrentHashMap<Enchantment, Integer> enchantments) {
+        HashMap<String, Integer> configurableEnchantments = new HashMap<>();
+        enchantments.forEach((enchant, level) -> {
+            configurableEnchantments.put(enchant.getKey().toString(), level);
+        });
+        return configurableEnchantments;
+    }
+
     public void addEnchant(String enchant, Integer level) {
         Registry<@NotNull Enchantment> registry = RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT);
-        enchantments.put(Objects.requireNonNull(registry.get(NamespacedKey.minecraft(enchant))), level);
+        this.enchantments.put(Objects.requireNonNull(registry.get(NamespacedKey.minecraft(enchant))), level);
+        config.set("general.enchantments", enchantListToConfigurableList(this.enchantments));
     }
 
     public void removeEnchant(String enchant) {
         Registry<@NotNull Enchantment> registry = RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT);
-        enchantments.remove(Objects.requireNonNull(registry.get(NamespacedKey.minecraft(enchant))));
+        this.enchantments.remove(Objects.requireNonNull(registry.get(NamespacedKey.minecraft(enchant))));
+        config.set("general.enchantments", enchantListToConfigurableList(this.enchantments));
     }
 
     public ItemStack createItem() {
-        ItemStack item = new ItemStack(material, amount);
+        ItemStack item = new ItemStack(material, 1);
         ItemMeta meta = item.getItemMeta();
         meta.setUnbreakable(unbreakable);
         meta.displayName(displayName.append(Component.space()).append(Component.text("(").color(NamedTextColor.GRAY)));
