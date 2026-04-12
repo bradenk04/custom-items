@@ -89,10 +89,21 @@ public class CustomItem {
             lore = loreRaw.get().stream().map(miniMessage::deserialize).toList();
         }
 
+        String id = config.get("id");
+        if (id == null || id.isBlank()) {
+            CustomItems.instance.getLogger().warning("A custom item is missing its id.");
+            return null;
+        }
+
         String materialRaw = config.get("general.material");
+        if (materialRaw == null || materialRaw.isBlank()) {
+            CustomItems.instance.getLogger().warning("Item " + id + " is missing general.material");
+            return null;
+        }
+
         Material mat = Material.matchMaterial(materialRaw);
         if (mat == null) {
-            CustomItems.instance.getLogger().warning("Material " + materialRaw + " does not exist!");
+            CustomItems.instance.getLogger().warning("Item " + id + " has invalid material " + materialRaw);
             return null;
         }
 

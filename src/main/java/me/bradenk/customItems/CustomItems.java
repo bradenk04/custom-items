@@ -7,6 +7,7 @@ import me.bradenk.customItems.config.ConfigLoader;
 import me.bradenk.customItems.gui.ItemEditSession;
 import me.bradenk.customItems.gui.ItemGUI;
 import me.bradenk.customItems.items.CustomItem;
+import me.bradenk.customItems.listeners.ClickListener;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -39,6 +40,7 @@ public final class CustomItems extends JavaPlugin {
                 .build();
         lamp.register(new ItemEditCommand());
         lamp.register(new ItemGiveCommand());
+        getServer().getPluginManager().registerEvents(new ClickListener(), this);
         itemGUI = new ItemGUI();
     }
 
