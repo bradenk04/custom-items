@@ -8,20 +8,17 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.components.CustomModelDataComponent;
-import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,22 +27,28 @@ public class CustomItem {
     private CommentedFileConfig config;
 
     private static final MiniMessage miniMessage = MiniMessage.miniMessage();
+    @NotNull
     private String id;
+    @Nullable
     private Component displayName;
+    @NotNull
     private Material material;
+    @Nullable
     private ConcurrentHashMap<Enchantment, Integer> enchantments;
+    @Nullable
     private List<Component> lore;
+    @Nullable
     private List<Float> customModelData;
     private boolean unbreakable;
 
     private CustomItem(
-            CommentedFileConfig config,
-            String id,
-            Component name,
-            Material material,
-            ConcurrentHashMap<Enchantment, Integer> enchantments,
-            List<Component> lore,
-            List<Float> cmd,
+            @NonNull CommentedFileConfig config,
+            @NonNull String id,
+            @Nullable Component name,
+            @NonNull Material material,
+            @Nullable ConcurrentHashMap<Enchantment, Integer> enchantments,
+            @Nullable List<Component> lore,
+            @Nullable List<Float> cmd,
             boolean unbreakable
     ) {
         this.config = config;
@@ -57,11 +60,13 @@ public class CustomItem {
         this.customModelData = cmd;
         this.unbreakable = unbreakable;
     }
+
+    @Nullable
     public static CustomItem from(CommentedFileConfig config) {
 
-        HashMap<String, Integer> enchantmentsRaw = config.get("general.enchantments");
+        Optional<HashMap<String, Integer>> enchantmentsRaw = config.getOptional("general.enchantments");
         ConcurrentHashMap<Enchantment, Integer> enchantments = new ConcurrentHashMap<>();
-        enchantmentsRaw.forEach((enchantName, level) -> {
+        enchantmentsRaw.ifPresent(stringIntegerHashMap -> stringIntegerHashMap.forEach((enchantName, level) -> {
             NamespacedKey key;
             if (enchantName.contains(":")) {
                 String firstPart = enchantName.split(":")[0];
@@ -76,24 +81,51 @@ public class CustomItem {
                 return;
             }
             enchantments.put(enchant, level);
-        });
+        }));
 
-        List<String> loreRaw = config.get("general.lore");
-        List<Component> lore = loreRaw.stream().map(miniMessage::deserialize).toList();
+        Optional<List<String>> loreRaw = config.getOptional("general.lore");
+        List<Component> lore = null;
+        if (loreRaw.isPresent()) {
+            lore = loreRaw.get().stream().map(miniMessage::deserialize).toList();
+        }
 
+        Material mat = Material.getMaterial(config.get("general.material"));
+        if (mat == null) {
+            CustomItems.instance.getLogger().warning("Material " + config.get("general.material") + " does not exist!");
+            return null;
+        }
+
+        Optional<String> displayNameRaw = config.getOptional("general.display_name");
+
+        Component displayName = null;
+        if (displayNameRaw.isPresent()) {
+            displayName = miniMessage.deserialize(displayNameRaw.get());
+        }
+
+        Optional<List<Float>> customModelDataRaw = config.getOptional("general.custom_model_data");
+        List<Float> customModelData = null;
+        if (customModelDataRaw.isPresent()) {
+            customModelData = customModelDataRaw.get();
+        }
+
+        Optional<Boolean> unbreakableRaw = config.getOptional("general.unbreakable");
+        boolean unbreakable = false;
+        if (unbreakableRaw.isPresent()) {
+            unbreakable = unbreakableRaw.get();
+        }
         return new CustomItem(
                 config,
                 config.get("id"),
-                miniMessage.deserialize(config.get("general.display_name")),
-                Material.getMaterial(config.get("general.material")),
+                displayName,
+                mat,
                 enchantments,
                 lore,
-                config.get("general.custom_model_data"),
-                config.get("general.unbreakable")
+                customModelData,
+                unbreakable
         );
     }
 
-    public String getId() {
+    public @NonNull String getId() {
         return id;
     }
 

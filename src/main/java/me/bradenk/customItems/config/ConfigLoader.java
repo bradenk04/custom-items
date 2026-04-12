@@ -52,6 +52,10 @@ public class ConfigLoader {
             CommentedFileConfig fileConfig = CommentedFileConfig.of(path);
             fileConfig.load();
             CustomItem item = CustomItem.from(fileConfig);
+            if (item == null) {
+                CustomItems.instance.getLogger().severe("Failed to load item: " + path.getFileName());
+                continue;
+            }
             if (customItems.containsKey(item.getId())) {
                 CustomItems.instance.getLogger().warning("Duplicate item id: " + item.getId());
                 continue;
