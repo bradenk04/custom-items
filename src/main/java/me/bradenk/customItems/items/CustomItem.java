@@ -195,44 +195,53 @@ public class CustomItem {
         config.set("general.enchantments", enchantListToConfigurableList(this.enchantments));
     }
 
+    @SuppressWarnings("UnstableApiUsage")
     public ItemStack createItem() {
         ItemStack item = new ItemStack(material, 1);
         ItemMeta meta = item.getItemMeta();
         meta.setUnbreakable(unbreakable);
-        meta.displayName(displayName.append(Component.space()).append(Component.text("(").color(NamedTextColor.GRAY)));
-        List<Component> finalLore = new ArrayList<>(lore);
-        if (!enchantments.isEmpty()) {
-            finalLore.add(Component.text(" "));
-            List<String> enchantList = new ArrayList<>();
-            enchantments.forEach((enchant, level) -> {
-                String enchantName = enchant.getKey().getKey().toUpperCase().replace('_', ' ') + " " + level;
-                enchantList.add(enchantName);
-            });
-            StringBuilder lineBuilder = new StringBuilder();
-            int count = 0;
-            for (int i = 0; i < enchantList.size(); i++) {
-                String enchantStr = enchantList.get(i);
-                if (count > 0) {
-                    lineBuilder.append(", ");
-                }
-                lineBuilder.append(enchantStr);
-                count++;
-                boolean nextWouldOverflow = (i + 1 < enchantList.size() &&
-                        lineBuilder.length() + 2 + enchantList.get(i + 1).length() > 35);
-                boolean reachedEnchantLimit = count >= 3;
-                if (nextWouldOverflow || reachedEnchantLimit || i == enchantList.size() - 1) {
-                    finalLore.add(Component.text(lineBuilder.toString()).color(NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false));
-                    lineBuilder.setLength(0);
-                    count = 0;
+        if (displayName != null) {
+            meta.displayName(displayName);
+        }
+        if (lore != null) {
+            List<Component> finalLore = new ArrayList<>(lore);
+            if (enchantments != null && !enchantments.isEmpty()) {
+                finalLore.add(Component.text(" "));
+                List<String> enchantList = new ArrayList<>();
+                enchantments.forEach((enchant, level) -> {
+                    String enchantName = enchant.getKey().getKey().toUpperCase().replace('_', ' ') + " " + level;
+                    enchantList.add(enchantName);
+                });
+                StringBuilder lineBuilder = new StringBuilder();
+                int count = 0;
+                for (int i = 0; i < enchantList.size(); i++) {
+                    String enchantStr = enchantList.get(i);
+                    if (count > 0) {
+                        lineBuilder.append(", ");
+                    }
+                    lineBuilder.append(enchantStr);
+                    count++;
+                    boolean nextWouldOverflow = (i + 1 < enchantList.size() &&
+                            lineBuilder.length() + 2 + enchantList.get(i + 1).length() > 35);
+                    boolean reachedEnchantLimit = count >= 3;
+                    if (nextWouldOverflow || reachedEnchantLimit || i == enchantList.size() - 1) {
+                        finalLore.add(Component.text(lineBuilder.toString()).color(NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false));
+                        lineBuilder.setLength(0);
+                        count = 0;
+                    }
                 }
             }
+            meta.lore(finalLore);
         }
-        CustomModelDataComponent cmd = meta.getCustomModelDataComponent();
-        cmd.setFloats(customModelData);
-        meta.setCustomModelDataComponent(cmd);
-        meta.lore(finalLore);
+        if (customModelData != null) {
+            CustomModelDataComponent cmd = meta.getCustomModelDataComponent();
+            cmd.setFloats(customModelData);
+            meta.setCustomModelDataComponent(cmd);
+        }
         meta.addItemFlags(ItemFlag.values());
-        enchantments.forEach(item::addUnsafeEnchantment);
+        if (enchantments != null) {
+            enchantments.forEach(item::addUnsafeEnchantment);
+        }
         item.setItemMeta(meta);
         return item;
     }
