@@ -39,7 +39,7 @@ public class ItemEditSession {
         this.displayName = item.getName();
         this.material = item.getMaterial();
         this.enchantments = new ConcurrentHashMap<>(item.getEnchantments());
-        this.lore = item.getLore();
+        this.lore = List.of(item.getLore());
         this.unbreakable = item.isUnbreakable();
         this.customModelData = item.getCustomModelData();
     }
@@ -84,8 +84,10 @@ public class ItemEditSession {
         this.unbreakable = unbreakable;
     }
 
-    public CustomItem toCustomItem() {
-        return new CustomItem(displayName, material, enchantments, lore, customModelData, unbreakable);
-    }
+//    public CustomItem toCustomItem() {
+//
+//
+//        return new CustomItem(displayName, material, enchantments, lore, customModelData, unbreakable);
+//    }
 }
 

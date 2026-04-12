@@ -134,6 +134,14 @@ public class CustomItem {
         return displayName;
     }
 
+    public Material getMaterial() {
+        return material;
+    }
+
+    public ConcurrentHashMap<Enchantment, Integer> getEnchantments() {
+        return enchantments;
+    }
+
     public void rename(Component component) {
         displayName = component;
         config.set("general.display_name", miniMessage.serialize(displayName));
