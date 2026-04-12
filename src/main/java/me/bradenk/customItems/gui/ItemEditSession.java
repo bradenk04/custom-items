@@ -6,14 +6,13 @@ import me.bradenk.customItems.config.ConfigLoader;
 import me.bradenk.customItems.items.CustomItem;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.enchantments.Enchantment;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -39,20 +38,24 @@ public class ItemEditSession {
         this.id = id;
         this.displayName = name == null ? Component.text("None") : name;
         this.material = material == null ? Material.STONE : material;
-        this.enchantments = enchantments == null ? new ConcurrentHashMap<>() : enchantments;
-        this.lore = lore == null ? new ArrayList<>() : lore;
+        this.enchantments = enchantments == null ? new ConcurrentHashMap<>() : new ConcurrentHashMap<>(enchantments);
+        this.lore = lore == null ? new ArrayList<>() : new ArrayList<>(lore);
         this.unbreakable = unbreakable;
-        this.customModelData = cmd == null ? new ArrayList<>() : cmd;
+        this.customModelData = cmd == null ? new ArrayList<>() : new ArrayList<>(cmd);
     }
 
     public ItemEditSession(CustomItem item) {
         this.id = item.getId();
         this.displayName = item.getName();
         this.material = item.getMaterial();
-        this.enchantments = item.getEnchantments();
-        this.lore = item.getLore();
+        this.enchantments = item.getEnchantments() == null
+                ? new ConcurrentHashMap<>()
+                : new ConcurrentHashMap<>(item.getEnchantments());
+        this.lore = stripGeneratedEnchantLore(item.getLore(), this.enchantments);
         this.unbreakable = item.isUnbreakable();
-        this.customModelData = item.getCustomModelData();
+        this.customModelData = item.getCustomModelData() == null
+                ? new ArrayList<>()
+                : new ArrayList<>(item.getCustomModelData());
     }
 
     public Component getDisplayName() {
@@ -107,5 +110,45 @@ public class ItemEditSession {
         ConfigLoader.customItems.put(id, item);
         return item;
     }
-}
 
+    private List<Component> stripGeneratedEnchantLore(List<Component> originalLore, ConcurrentHashMap<Enchantment, Integer> enchantments) {
+        if (originalLore == null || originalLore.isEmpty()) {
+            return new ArrayList<>();
+        }
+        if (enchantments == null || enchantments.isEmpty()) {
+            return new ArrayList<>(originalLore);
+        }
+
+        List<Component> cleaned = new ArrayList<>(originalLore);
+
+        cleaned.removeIf(component -> {
+            String plain = PlainTextComponentSerializer.plainText().serialize(component).trim();
+            if (plain.isEmpty()) {
+                return false;
+            }
+
+            for (Enchantment enchantment : enchantments.keySet()) {
+                Integer level = enchantments.get(enchantment);
+                if (level == null) {
+                    continue;
+                }
+
+                String key = enchantment.getKey().getKey();
+                if (plain.equalsIgnoreCase(key + " " + level) || plain.equalsIgnoreCase("- " + key + " " + level)) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+
+        while (!cleaned.isEmpty() && PlainTextComponentSerializer.plainText().serialize(cleaned.getLast()).trim().isEmpty()) {
+            cleaned.removeLast();
+        }
+
+        for (Component component : cleaned) {
+            Bukkit.broadcast(component);
+        }
+        return cleaned;
+    }
+}

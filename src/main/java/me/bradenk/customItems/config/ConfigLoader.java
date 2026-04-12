@@ -73,4 +73,16 @@ public class ConfigLoader {
                     .collect(Collectors.toList());
         }
     }
+
+    public static CommentedFileConfig getMainConfig() {
+        File configFile = new File(CustomItems.instance.getDataFolder(), "config.toml");
+
+        if (!configFile.exists()) {
+            CustomItems.instance.saveResource("config.toml", false);
+        }
+
+        CommentedFileConfig config = CommentedFileConfig.of(configFile);
+        config.load();
+        return config;
+    }
 }

@@ -4,6 +4,7 @@ import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import me.bradenk.customItems.CustomItems;
+import me.bradenk.customItems.config.ConfigLoader;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -251,48 +252,85 @@ public class CustomItem {
         ItemStack item = new ItemStack(material, 1);
         ItemMeta meta = item.getItemMeta();
         meta.setUnbreakable(unbreakable);
+
         if (displayName != null) {
             meta.displayName(displayName.decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
         }
+
+        List<Component> finalLore = new ArrayList<>();
         if (lore != null) {
-            List<Component> finalLore = lore.stream().map(component -> component.decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE)).toList();
-            if (enchantments != null && !enchantments.isEmpty()) {
+            finalLore.addAll(
+                    lore.stream()
+                            .map(component -> component.decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE))
+                            .toList()
+            );
+        }
+
+        CommentedFileConfig config = ConfigLoader.getMainConfig();
+
+        boolean debug = config.get("use_vanilla_enchants_in_lore") instanceof Boolean b && b;
+
+        if (enchantments != null && !enchantments.isEmpty() && !debug) {
+            if (!finalLore.isEmpty()) {
                 finalLore.add(Component.text(" "));
-                List<String> enchantList = new ArrayList<>();
-                enchantments.forEach((enchant, level) -> {
-                    String enchantName = enchant.getKey().getKey().toUpperCase().replace('_', ' ') + " " + level;
-                    enchantList.add(enchantName);
-                });
-                StringBuilder lineBuilder = new StringBuilder();
-                int count = 0;
-                for (int i = 0; i < enchantList.size(); i++) {
-                    String enchantStr = enchantList.get(i);
-                    if (count > 0) {
-                        lineBuilder.append(", ");
-                    }
-                    lineBuilder.append(enchantStr);
-                    count++;
-                    boolean nextWouldOverflow = (i + 1 < enchantList.size() &&
-                            lineBuilder.length() + 2 + enchantList.get(i + 1).length() > 35);
-                    boolean reachedEnchantLimit = count >= 3;
-                    if (nextWouldOverflow || reachedEnchantLimit || i == enchantList.size() - 1) {
-                        finalLore.add(Component.text(lineBuilder.toString()).color(NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false));
-                        lineBuilder.setLength(0);
-                        count = 0;
-                    }
+            }
+
+            List<String> enchantList = new ArrayList<>();
+            enchantments.forEach((enchant, level) -> {
+                String enchantName = enchant.getKey().getKey().toUpperCase().replace('_', ' ') + " " + level;
+                enchantList.add(enchantName);
+            });
+
+            StringBuilder lineBuilder = new StringBuilder();
+            int count = 0;
+
+            for (int i = 0; i < enchantList.size(); i++) {
+                String enchantStr = enchantList.get(i);
+
+                if (count > 0) {
+                    lineBuilder.append(", ");
+                }
+
+                lineBuilder.append(enchantStr);
+                count++;
+
+                boolean nextWouldOverflow = i + 1 < enchantList.size()
+                        && lineBuilder.length() + 2 + enchantList.get(i + 1).length() > 35;
+                boolean reachedEnchantLimit = count >= 3;
+
+                if (nextWouldOverflow || reachedEnchantLimit || i == enchantList.size() - 1) {
+                    finalLore.add(
+                            Component.text(lineBuilder.toString())
+                                    .color(NamedTextColor.BLUE)
+                                    .decoration(TextDecoration.ITALIC, false)
+                    );
+                    lineBuilder.setLength(0);
+                    count = 0;
                 }
             }
+        }
+
+        if (!finalLore.isEmpty()) {
             meta.lore(finalLore);
         }
-        if (customModelData != null) {
+
+        if (customModelData != null && !customModelData.isEmpty()) {
             CustomModelDataComponent cmd = meta.getCustomModelDataComponent();
             cmd.setFloats(customModelData);
             meta.setCustomModelDataComponent(cmd);
         }
+
         meta.addItemFlags(ItemFlag.values());
-        if (enchantments != null) {
-            enchantments.forEach(item::addUnsafeEnchantment);
+        if (debug) {
+            meta.removeItemFlags(ItemFlag.HIDE_ENCHANTS);
         }
+
+        if (enchantments != null) {
+            for (Enchantment ench : enchantments.keySet()) {
+                meta.addEnchant(ench, enchantments.get(ench), true);
+            }
+        }
+
         item.setItemMeta(meta);
         return item;
     }

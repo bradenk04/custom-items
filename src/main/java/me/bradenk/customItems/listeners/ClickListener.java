@@ -14,11 +14,13 @@ import org.bukkit.Registry;
 import org.bukkit.entity.Player;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryAction;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MenuType;
@@ -37,40 +39,59 @@ public class ClickListener implements Listener {
     private final CustomItems plugin = CustomItems.instance;
     private final ConcurrentHashMap<UUID, PendingAnvilInput> pendingInputs = new ConcurrentHashMap<>();
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onEditorClick(InventoryClickEvent event) {
         if (event.getView() instanceof AnvilView) return;
-        plugin.getLogger().info("1");
-        if (event.getCurrentItem() == null) return;
-        plugin.getLogger().info("2");
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        plugin.getLogger().info("3");
         if (!isItemEditor(event.getView())) return;
-        plugin.getLogger().info("4");
 
         event.setCancelled(true);
+
+        if (event.getClickedInventory() == null) return;
+
+        Inventory top = event.getView().getTopInventory();
+
+        if (event.getClickedInventory() != top) {
+            return;
+        }
+
+        if (event.getClick() == ClickType.NUMBER_KEY) return;
+        if (event.getCurrentItem() == null) return;
 
         ItemEditSession session = plugin.getSession(player.getUniqueId());
         if (session == null) return;
 
         ItemStack clicked = event.getCurrentItem();
-        if (clicked == null) return;
 
         switch (clicked.getType()) {
-            case NAME_TAG -> openAnvilInput(
-                    player,
-                    InputType.DISPLAY_NAME,
-                    "Display Name",
-                    plainOrEmpty(session.getDisplayName()),
-                    Material.NAME_TAG
+            case NAME_TAG -> Bukkit.getScheduler().runTask(plugin, () ->
+                    openAnvilInput(
+                            player,
+                            InputType.DISPLAY_NAME,
+                            "Display Name",
+                            plainOrEmpty(session.getDisplayName()),
+                            Material.NAME_TAG
+                    )
             );
 
-            case OAK_SIGN -> openAnvilInput(
-                    player,
-                    InputType.LORE,
-                    "Lore",
-                    loreToSingleInput(session.getLore()),
-                    Material.OAK_SIGN
+            case OAK_SIGN -> Bukkit.getScheduler().runTask(plugin, () ->
+                    openAnvilInput(
+                            player,
+                            InputType.LORE,
+                            "Lore",
+                            loreToSingleInput(session.getLore()),
+                            Material.OAK_SIGN
+                    )
+            );
+
+            case ENCHANTED_BOOK -> Bukkit.getScheduler().runTask(plugin, () ->
+                    openAnvilInput(
+                            player,
+                            InputType.ENCHANT,
+                            "Enchant",
+                            "sharpness:5",
+                            Material.ENCHANTED_BOOK
+                    )
             );
 
             case LEVER -> {
@@ -80,48 +101,43 @@ public class ClickListener implements Listener {
                 reopenEditor(player);
             }
 
-            case ENCHANTED_BOOK -> openAnvilInput(
-                    player,
-                    InputType.ENCHANT,
-                    "Enchant",
-                    "sharpness:5",
-                    Material.ENCHANTED_BOOK
-            );
-
             case DISPENSER -> {
-                CustomItem item = null;
                 try {
-                    item = session.toCustomItem();
+                    CustomItem item = session.toCustomItem();
+                    for (Enchantment enchantment : item.getEnchantments().keySet()) {
+                        Bukkit.broadcast(Component.text(enchantment.getKey().getKey()));
+                    }
+                    player.getInventory().addItem(item.createItem());
+                    player.sendMessage(Component.text("Given item " + item.getId()));
+                    player.playSound(Sound.sound(Key.key("minecraft:entity.experience_orb.pickup"), Sound.Source.PLAYER, 1f, 1f));
+                    player.closeInventory();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-                player.getInventory().addItem(item.createItem());
-                player.sendMessage(Component.text("Given item " + item.getId()));
-                player.playSound(Sound.sound(Key.key("minecraft:entity.experience_orb.pickup"), Sound.Source.PLAYER, 1f, 1f));
-                player.closeInventory();
             }
 
             case WRITABLE_BOOK -> {
-                CustomItem item = null;
                 try {
-                    item = session.toCustomItem();
+                    CustomItem item = session.toCustomItem();
+                    item.save();
+                    player.sendMessage(Component.text("Saved item " + item.getId()));
+                    player.playSound(Sound.sound(Key.key("minecraft:entity.experience_orb.pickup"), Sound.Source.PLAYER, 1f, 1f));
+                    player.closeInventory();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-                item.save();
-                player.sendMessage(Component.text("Saved item " + item.getId()));
-                player.playSound(Sound.sound(Key.key("minecraft:entity.experience_orb.pickup"), Sound.Source.PLAYER, 1f, 1f));
-                player.closeInventory();
             }
 
             default -> {
                 if (event.getSlot() == 12) {
-                    openAnvilInput(
-                            player,
-                            InputType.MATERIAL,
-                            "Material",
-                            session.getMaterial().name(),
-                            session.getMaterial()
+                    Bukkit.getScheduler().runTask(plugin, () ->
+                            openAnvilInput(
+                                    player,
+                                    InputType.MATERIAL,
+                                    "Material",
+                                    session.getMaterial().name(),
+                                    session.getMaterial()
+                            )
                     );
                 }
             }
@@ -131,16 +147,12 @@ public class ClickListener implements Listener {
     @EventHandler
     public void onPrepare(PrepareAnvilEvent event) {
         if (!(event.getView() instanceof AnvilView view)) return;
-        plugin.getLogger().info("1.1");
         if (!(event.getView().getPlayer() instanceof Player player)) return;
-        plugin.getLogger().info("1.2");
         if (!pendingInputs.containsKey(player.getUniqueId())) return;
-        plugin.getLogger().info("1.3");
 
         String text = view.getRenameText();
         if (text == null || text.isBlank()) {
             event.setResult(null);
-            plugin.getLogger().info("?>???");
             return;
         }
 
@@ -155,20 +167,18 @@ public class ClickListener implements Listener {
         view.setRepairItemCountCost(0);
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onAnvilClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        plugin.getLogger().info("2.1");
+        if (!(event.getView() instanceof AnvilView anvilView)) return;
 
         PendingAnvilInput pending = pendingInputs.get(player.getUniqueId());
         if (pending == null) return;
-        plugin.getLogger().info("2.2");
-        if (!(event.getView() instanceof AnvilView anvilView)) return;
-        plugin.getLogger().info("2.3");
-        if (event.getRawSlot() != 2) return;
-        plugin.getLogger().info("2.5");
 
         event.setCancelled(true);
+
+        if (event.getClick() == ClickType.NUMBER_KEY) return;
+        if (event.getRawSlot() != 2) return;
 
         ItemEditSession session = plugin.getSession(player.getUniqueId());
         if (session == null) {
@@ -256,7 +266,6 @@ public class ClickListener implements Listener {
     }
 
     private boolean applyMaterial(ItemEditSession session, String input, Player player) {
-
         Material material = Material.matchMaterial(input.trim());
         if (material == null) {
             fail(player, "Invalid material.");
