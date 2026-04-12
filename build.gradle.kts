@@ -16,10 +16,9 @@ dependencies {
     paperweight.paperDevBundle("26.1.1.build.+")
     implementation("com.electronwill.night-config:core:3.8.4")
     implementation("com.electronwill.night-config:toml:3.8.4")
-    implementation("io.github.revxrsal:lamp.common:4.0.0-rc16")
-    implementation("io.github.revxrsal:lamp.bukkit:4.0.0-rc16")
-    implementation("io.github.revxrsal:lamp.brigadier:4.0.0-rc16")
-    implementation("io.github.revxrsal:lamp.paper:4.0.0-rc16")
+    implementation("io.github.revxrsal:lamp.common:4.0.0-rc.16")
+    implementation("io.github.revxrsal:lamp.bukkit:4.0.0-rc.16")
+    implementation("io.github.revxrsal:lamp.brigadier:4.0.0-rc.16")
 }
 
 paperPluginYaml {
