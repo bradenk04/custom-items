@@ -29,6 +29,7 @@ paperPluginYaml {
     authors.addAll("bradenk04", "Stryff")
     website = "https://bradenk.me/"
     prefix = "CustomItems"
+    name = "CustomItems"
 }
 
 java {

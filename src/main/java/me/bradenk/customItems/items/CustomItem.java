@@ -28,20 +28,16 @@ public class CustomItem {
 
     private Component displayName;
     private Material material;
+    private int amount;
     private ConcurrentHashMap<Enchantment, Integer> enchantments;
     private List<Component> lore;
     private List<Float> customModelData;
     private boolean unbreakable;
 
-    public CustomItem(Component name,
-                      Material material,
-                      ConcurrentHashMap<Enchantment, Integer> enchantments,
-                      List<Component> lore,
-                      List<Float> cmd,
-                      boolean unbreakable
-    ) {
+    private CustomItem(Component name, Material material, int amount, ConcurrentHashMap<Enchantment, Integer> enchantments, List<Component> lore, List<Float> cmd, boolean unbreakable) {
         this.displayName = name;
         this.material = material;
+        this.amount = amount;
         this.enchantments = enchantments;
         this.lore = lore;
         this.unbreakable = unbreakable;
@@ -52,20 +48,16 @@ public class CustomItem {
         return displayName;
     }
 
-    public Material getMaterial() {
-        return material;
-    }
-
     public void rename(Component component) {
         displayName = component;
     }
 
-    public void setLore(List<Component> lore) {
-        this.lore = lore;
+    public void setLore(Component[] lore) {
+        this.lore = Arrays.asList(lore);
     }
 
-    public List<Component> getLore() {
-        return lore;
+    public Component[] getLore() {
+        return lore.toArray(new Component[0]);
     }
 
     public void addLore(Component... lore) {
@@ -74,6 +66,14 @@ public class CustomItem {
 
     public void addLore(Component lore) {
         this.lore.add(lore);
+    }
+
+    public void setAmount(int amount) {
+        this.amount = amount;
+    }
+
+    public int getAmount() {
+        return amount;
     }
 
     public void setCustomModelData(List<Float> data) {
@@ -101,12 +101,8 @@ public class CustomItem {
         enchantments.remove(Objects.requireNonNull(registry.get(NamespacedKey.minecraft(enchant))));
     }
 
-    public Map<Enchantment, Integer> getEnchantments() {
-        return enchantments;
-    }
-
     public ItemStack createItem() {
-        ItemStack item = new ItemStack(material);
+        ItemStack item = new ItemStack(material, amount);
         ItemMeta meta = item.getItemMeta();
         meta.setUnbreakable(unbreakable);
         meta.displayName(displayName.append(Component.space()).append(Component.text("(").color(NamedTextColor.GRAY)));
