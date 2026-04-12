@@ -1,2 +1,4 @@
 id = "cool_diamond_sword"
+
+[general]
 material = "minecraft:diamond_sword"
