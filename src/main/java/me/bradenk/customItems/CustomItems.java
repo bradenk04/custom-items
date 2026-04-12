@@ -4,13 +4,19 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class CustomItems extends JavaPlugin {
 
+    private static CustomItems plugin;
+
     @Override
     public void onEnable() {
-        // Plugin startup logic
+        plugin = this;
     }
 
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+    }
+
+    public static CustomItems getPlugin() {
+        return plugin;
     }
 }
