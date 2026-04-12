@@ -41,7 +41,7 @@ public class CustomItem {
     private List<Float> customModelData;
     private boolean unbreakable;
 
-    private CustomItem(
+    public CustomItem(
             @NonNull CommentedFileConfig config,
             @NonNull String id,
             @Nullable Component name,
@@ -212,6 +212,27 @@ public class CustomItem {
         Registry<@NotNull Enchantment> registry = RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT);
         this.enchantments.remove(Objects.requireNonNull(registry.get(NamespacedKey.minecraft(enchant))));
         config.set("general.enchantments", enchantListToConfigurableList(this.enchantments));
+    }
+
+    public void save() {
+        config.set("id", id);
+        config.set("general.material", material.name());
+        if (displayName != null) {
+            config.set("general.display_name", miniMessage.serialize(displayName));
+        }
+        if (enchantments != null) {
+            config.set("general.enchantments", enchantListToConfigurableList(enchantments));
+        }
+        if (lore != null) {
+            config.set("general.lore", lore.stream().map(miniMessage::serialize).toList());
+        }
+        if (customModelData != null) {
+            config.set("general.custom_model_data", customModelData);
+        }
+        if (unbreakable) {
+            config.set("general.unbreakable", true);
+        }
+        config.save();
     }
 
     @SuppressWarnings("UnstableApiUsage")
