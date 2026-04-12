@@ -305,7 +305,7 @@ public class CustomItem {
                             .decoration(TextDecoration.ITALIC, false);
 
                     if (firstEnchantLine) {
-                        line = line.append(Component.text("[[ENCHANTS]]").color(NamedTextColor.BLACK));
+                        line = line.append(Component.text("ᶦ").color(NamedTextColor.BLACK));
                         firstEnchantLine = false;
                     }
 

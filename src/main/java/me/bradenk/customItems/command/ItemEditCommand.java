@@ -129,29 +129,44 @@ public class ItemEditCommand {
             actor.sendRawMessage("You must be a player to edit an item!");
             return;
         }
+
         Player player = actor.asPlayer();
         if (player == null) {
             throw new IllegalStateException("Player is null after checking if it is a player!");
         }
+
         if (id == null || !id.matches("^[a-z_]+$")) {
-            actor.asPlayer().sendMessage(Component.text("Invalid key. Use a-z and underscores.", NamedTextColor.RED));
+            player.sendMessage(Component.text("Invalid key. Use a-z and underscores.", NamedTextColor.RED));
             return;
         }
-        ItemStack held = player.getInventory().getItemInMainHand();
 
-        Component name = held.effectiveName();
+        ItemStack held = player.getInventory().getItemInMainHand();
+        if (held.getType() == Material.AIR) {
+            player.sendMessage(Component.text("You must hold an item to create an editor session.", NamedTextColor.RED));
+            return;
+        }
+
+        ItemMeta meta = held.getItemMeta();
+
+        Component name;
+        if (meta != null && meta.hasDisplayName() && meta.displayName() != null) {
+            name = meta.displayName();
+        } else {
+            name = held.effectiveName();
+        }
+
         Material material = held.getType();
         ConcurrentHashMap<Enchantment, Integer> enchants = new ConcurrentHashMap<>(held.getEnchantments());
 
-        List<Component> lore = held.hasItemMeta() && held.getItemMeta().hasLore()
-                ? new ArrayList<>(held.getItemMeta().lore())
+        List<Component> lore = meta != null && meta.hasLore() && meta.lore() != null
+                ? new ArrayList<>(meta.lore())
                 : new ArrayList<>();
 
-        List<Float> cmd = held.hasItemMeta() && held.getItemMeta().hasCustomModelDataComponent()
-                ? new ArrayList<>(held.getItemMeta().getCustomModelDataComponent().getFloats())
+        List<Float> cmd = meta != null && meta.hasCustomModelDataComponent()
+                ? new ArrayList<>(meta.getCustomModelDataComponent().getFloats())
                 : new ArrayList<>();
 
-        boolean unbreakable = held.hasItemMeta() && held.getItemMeta().isUnbreakable();
+        boolean unbreakable = meta != null && meta.isUnbreakable();
 
         ItemEditSession session = new ItemEditSession(
                 id,

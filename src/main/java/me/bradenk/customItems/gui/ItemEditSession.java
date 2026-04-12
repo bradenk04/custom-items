@@ -130,7 +130,7 @@ public class ItemEditSession {
         for (Component component : originalLore) {
             String plain = PlainTextComponentSerializer.plainText().serialize(component);
 
-            if (plain.contains("[[ENCHANTS]]")) {
+            if (plain.contains("ᶦ")) {
                 break;
             }
 

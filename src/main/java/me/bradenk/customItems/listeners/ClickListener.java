@@ -39,6 +39,7 @@ public class ClickListener implements Listener {
 
     private final CustomItems plugin = CustomItems.instance;
     private final ConcurrentHashMap<UUID, PendingAnvilInput> pendingInputs = new ConcurrentHashMap<>();
+    private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onEditorClick(InventoryClickEvent event) {
@@ -51,10 +52,7 @@ public class ClickListener implements Listener {
         if (event.getClickedInventory() == null) return;
 
         Inventory top = event.getView().getTopInventory();
-
-        if (event.getClickedInventory() != top) {
-            return;
-        }
+        if (event.getClickedInventory() != top) return;
 
         if (event.getClick() == ClickType.NUMBER_KEY) return;
         if (event.getCurrentItem() == null) return;
@@ -75,25 +73,53 @@ public class ClickListener implements Listener {
                     )
             );
 
-            case OAK_SIGN -> Bukkit.getScheduler().runTask(plugin, () ->
-                    openAnvilInput(
-                            player,
-                            InputType.LORE,
-                            "Lore",
-                            loreToSingleInput(session.getLore()),
-                            Material.OAK_SIGN
-                    )
-            );
+            case OAK_SIGN -> {
+                if (event.isShiftClick() && event.isRightClick()) {
+                    if (removeLastLore(session, player)) {
+                        player.playSound(Sound.sound(Key.key("minecraft:entity.experience_orb.pickup"), Sound.Source.PLAYER, 1f, 1f));
+                        reopenEditor(player);
+                    }
+                } else if (event.isRightClick()) {
+                    Bukkit.getScheduler().runTask(plugin, () ->
+                            openAnvilInput(
+                                    player,
+                                    InputType.LORE_APPEND,
+                                    "Add Lore Line",
+                                    "",
+                                    Material.OAK_SIGN
+                            )
+                    );
+                } else {
+                    Bukkit.getScheduler().runTask(plugin, () ->
+                            openAnvilInput(
+                                    player,
+                                    InputType.LORE,
+                                    "Lore",
+                                    loreToSingleInput(session.getLore()),
+                                    Material.OAK_SIGN
+                            )
+                    );
+                }
+            }
 
-            case ENCHANTED_BOOK -> Bukkit.getScheduler().runTask(plugin, () ->
-                    openAnvilInput(
-                            player,
-                            InputType.ENCHANT,
-                            "Enchant",
-                            "sharpness:5",
-                            Material.ENCHANTED_BOOK
-                    )
-            );
+            case ENCHANTED_BOOK -> {
+                if (event.isShiftClick() && event.isRightClick()) {
+                    if (removeLastEnchant(session, player)) {
+                        player.playSound(Sound.sound(Key.key("minecraft:entity.experience_orb.pickup"), Sound.Source.PLAYER, 1f, 1f));
+                        reopenEditor(player);
+                    }
+                } else {
+                    Bukkit.getScheduler().runTask(plugin, () ->
+                            openAnvilInput(
+                                    player,
+                                    InputType.ENCHANT,
+                                    "Enchant",
+                                    "sharpness:5",
+                                    Material.ENCHANTED_BOOK
+                            )
+                    );
+                }
+            }
 
             case LEVER -> {
                 session.setUnbreakable(!session.isUnbreakable());
@@ -105,9 +131,6 @@ public class ClickListener implements Listener {
             case DISPENSER -> {
                 try {
                     CustomItem item = session.toCustomItem();
-                    for (Enchantment enchantment : item.getEnchantments().keySet()) {
-                        Bukkit.broadcast(Component.text(enchantment.getKey().getKey()));
-                    }
                     player.getInventory().addItem(item.createItem());
                     player.sendMessage(Component.text("Given item " + item.getId()));
                     player.playSound(Sound.sound(Key.key("minecraft:entity.experience_orb.pickup"), Sound.Source.PLAYER, 1f, 1f));
@@ -148,8 +171,8 @@ public class ClickListener implements Listener {
     @EventHandler
     public void onPrepare(PrepareAnvilEvent event) {
         if (!(event.getView() instanceof AnvilView view)) return;
-        if (!(event.getView().getPlayer() instanceof Player player)) return;
-        if (!pendingInputs.containsKey(player.getUniqueId())) return;
+        if (!(event.getView().getPlayer() instanceof Player)) return;
+        if (!pendingInputs.containsKey(event.getView().getPlayer().getUniqueId())) return;
 
         String text = view.getRenameText();
         if (text == null || text.isBlank()) {
@@ -199,6 +222,7 @@ public class ClickListener implements Listener {
             case DISPLAY_NAME -> applyDisplayName(session, input, player);
             case MATERIAL -> applyMaterial(session, input, player);
             case LORE -> applyLore(session, input, player);
+            case LORE_APPEND -> applyLoreAppend(session, input, player);
             case ENCHANT -> applyEnchant(session, input, player);
         };
 
@@ -247,11 +271,9 @@ public class ClickListener implements Listener {
 
         ItemStack left = new ItemStack(icon);
         ItemMeta meta = left.getItemMeta();
-        if (initialText != null && !initialText.isBlank()) {
-            meta.displayName(Component.text(initialText));
-        } else {
-            meta.displayName(Component.text(" "));
-        }
+        meta.displayName((initialText != null && !initialText.isBlank())
+                ? MINI_MESSAGE.deserialize(initialText)
+                : Component.text(" "));
         left.setItemMeta(meta);
 
         view.getTopInventory().setItem(0, left);
@@ -265,7 +287,7 @@ public class ClickListener implements Listener {
     }
 
     private boolean applyDisplayName(ItemEditSession session, String input, Player player) {
-        session.setDisplayName(MiniMessage.miniMessage().deserialize(input));
+        session.setDisplayName(MINI_MESSAGE.deserialize(input));
         player.sendMessage(Component.text("Updated display name."));
         return true;
     }
@@ -287,11 +309,26 @@ public class ClickListener implements Listener {
         for (String part : input.split("\\|")) {
             String trimmed = part.trim();
             if (!trimmed.isEmpty()) {
-                lore.add(MiniMessage.miniMessage().deserialize(trimmed));
+                lore.add(MINI_MESSAGE.deserialize(trimmed));
             }
         }
         session.setLore(lore);
         player.sendMessage(Component.text(lore.isEmpty() ? "Cleared lore." : "Updated lore."));
+        return true;
+    }
+
+    private boolean applyLoreAppend(ItemEditSession session, String input, Player player) {
+        String trimmed = input.trim();
+        if (trimmed.isEmpty()) {
+            fail(player, "Lore line cannot be empty.");
+            return false;
+        }
+
+        List<Component> lore = session.getLore() == null ? new ArrayList<>() : new ArrayList<>(session.getLore());
+        lore.add(MINI_MESSAGE.deserialize(trimmed));
+        session.setLore(lore);
+
+        player.sendMessage(Component.text("Added lore line."));
         return true;
     }
 
@@ -372,6 +409,7 @@ public class ClickListener implements Listener {
         DISPLAY_NAME,
         MATERIAL,
         LORE,
+        LORE_APPEND,
         ENCHANT
     }
 
@@ -397,5 +435,44 @@ public class ClickListener implements Listener {
     }
 
     private record ParsedEnchant(Enchantment enchantment, int level) {
+    }
+
+    private boolean removeLastLore(ItemEditSession session, Player player) {
+        List<Component> lore = session.getLore();
+        if (lore == null || lore.isEmpty()) {
+            fail(player, "There are no lore lines to remove.");
+            return false;
+        }
+
+        List<Component> updatedLore = new ArrayList<>(lore);
+        updatedLore.remove(updatedLore.size() - 1);
+        session.setLore(updatedLore);
+
+        player.sendMessage(Component.text("Removed last lore line."));
+        return true;
+    }
+
+    private boolean removeLastEnchant(ItemEditSession session, Player player) {
+        ConcurrentHashMap<Enchantment, Integer> enchants = session.getEnchantments();
+        if (enchants == null || enchants.isEmpty()) {
+            fail(player, "There are no enchantments to remove.");
+            return false;
+        }
+
+        Enchantment lastEnchant = null;
+        for (Enchantment enchantment : enchants.keySet()) {
+            lastEnchant = enchantment;
+        }
+
+        if (lastEnchant == null) {
+            fail(player, "There are no enchantments to remove.");
+            return false;
+        }
+
+        enchants.remove(lastEnchant);
+        session.setEnchantments(enchants);
+
+        player.sendMessage(Component.text("Removed last enchant: " + lastEnchant.getKey().getKey()));
+        return true;
     }
 }

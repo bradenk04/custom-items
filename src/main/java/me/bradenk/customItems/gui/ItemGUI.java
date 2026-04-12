@@ -27,8 +27,13 @@ public class ItemGUI {
             gui.setItem(a, createGlass());
         }
 
-        gui.setItem(11, makeButton(Material.NAME_TAG, Component.text("Display Name: ").color(NamedTextColor.GOLD)
-                .append(CustomItems.instance.getSession(player.getUniqueId()).getDisplayName().color(NamedTextColor.YELLOW)), List.of(Component.empty()), player));
+        gui.setItem(11, makeButton(
+                Material.NAME_TAG,
+                Component.text("Display Name: ", NamedTextColor.GOLD)
+                        .append(CustomItems.instance.getSession(player.getUniqueId()).getDisplayName()),
+                List.of(Component.empty()),
+                player
+        ));
 
         gui.setItem(12, makeButton(CustomItems.instance.getSession(player.getUniqueId()).getMaterial(), Component.text("Material: ").color(NamedTextColor.GOLD)
                 .append(Component.text(CustomItems.instance.getSession(player.getUniqueId()).getMaterial().getKey().getKey().toUpperCase()).color(NamedTextColor.YELLOW)), List.of(Component.empty()), player));
@@ -57,22 +62,48 @@ public class ItemGUI {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.displayName(name.decoration(TextDecoration.ITALIC, false));
+
             List<Component> finalLore = new ArrayList<>();
             switch (material) {
                 case OAK_SIGN:
                     for (Component component : lore) {
-                        finalLore.add(Component.text("- ", NamedTextColor.YELLOW).append(component));
+                        finalLore.add(
+                                Component.text("- ", NamedTextColor.YELLOW)
+                                        .append(component)
+                                        .decoration(TextDecoration.ITALIC, false)
+                        );
                     }
+                    finalLore.add(Component.empty());
+                    finalLore.add(Component.text("Left click to edit all lore", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                    finalLore.add(Component.text("Right click to add one line", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                    finalLore.add(Component.text("Shift-right click to remove last line", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
                     break;
+
                 case ENCHANTED_BOOK:
                     ConcurrentHashMap<Enchantment, Integer> enchantments = CustomItems.instance.getSession(player.getUniqueId()).getEnchantments();
-                    for (Enchantment enchantment : CustomItems.instance.getSession(player.getUniqueId()).getEnchantments().keySet()) {
-                        finalLore.add(Component.text("- ", NamedTextColor.YELLOW).append(
-                                Component.text(enchantment.getKey().getKey())).append(
-                                        Component.space())
-                                .append(Component.text(enchantments.get(enchantment))).color(NamedTextColor.YELLOW));
+                    for (Enchantment enchantment : enchantments.keySet()) {
+                        finalLore.add(
+                                Component.text("- ", NamedTextColor.YELLOW)
+                                        .append(Component.text(enchantment.getKey().getKey()))
+                                        .append(Component.space())
+                                        .append(Component.text(enchantments.get(enchantment)))
+                                        .color(NamedTextColor.YELLOW)
+                                        .decoration(TextDecoration.ITALIC, false)
+                        );
                     }
+
+                    finalLore.add(Component.empty());
+                    finalLore.add(Component.text("Click to add enchant", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                    finalLore.add(Component.text("Shift-right click to remove last enchant", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                    break;
+
+                default:
+                    for (Component component : lore) {
+                        finalLore.add(component.decoration(TextDecoration.ITALIC, false));
+                    }
+                    break;
             }
+
             meta.lore(finalLore);
             item.setItemMeta(meta);
             item.setAmount(1);
