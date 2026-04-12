@@ -7,11 +7,11 @@ import revxrsal.commands.bukkit.BukkitLamp;
 import revxrsal.commands.bukkit.actor.BukkitCommandActor;
 
 public final class CustomItems extends JavaPlugin {
-
-
+    public static CustomItems instance;
 
     @Override
     public void onEnable() {
+        instance = this;
         Lamp<BukkitCommandActor> lamp = BukkitLamp.builder(this).build();
         lamp.register(new ItemEditCommand());
     }
