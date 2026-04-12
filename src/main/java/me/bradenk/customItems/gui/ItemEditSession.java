@@ -38,7 +38,7 @@ public class ItemEditSession {
     public ItemEditSession(CustomItem item) {
         this.displayName = item.getName();
         this.material = item.getMaterial();
-        this.enchantments = new ConcurrentHashMap<>(item.getEnchantments());
+        this.enchantments = item.getEnchantments();
         this.lore = item.getLore();
         this.unbreakable = item.isUnbreakable();
         this.customModelData = item.getCustomModelData();

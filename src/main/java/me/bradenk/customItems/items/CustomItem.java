@@ -139,23 +139,42 @@ public class CustomItem {
         config.set("general.display_name", miniMessage.serialize(displayName));
     }
 
-    public void setLore(Component[] lore) {
-        this.lore = Arrays.asList(lore);
-        config.set("general.lore", Arrays.stream(lore).map(miniMessage::serialize).toList());
+    public void setLore(List<Component> lore) {
+        this.lore = lore;
+        config.set("general.lore", lore.stream().map(miniMessage::serialize).toList());
     }
 
-    public Component[] getLore() {
-        return lore.toArray(new Component[0]);
+    public List<Component> getLore() {
+        return lore;
     }
 
     public void addLore(Component... lore) {
+        if (this.lore == null) {
+            this.lore = new ArrayList<>();
+        }
         this.lore.addAll(Arrays.asList(lore));
-        setLore(this.lore.toArray(new Component[0]));
+        setLore(this.lore);
     }
 
     public void addLore(Component lore) {
+        if (this.lore == null) {
+            this.lore = new ArrayList<>();
+        }
         this.lore.add(lore);
-        setLore(this.lore.toArray(new Component[0]));
+        setLore(this.lore);
+    }
+
+    public @NonNull Material getMaterial() {
+        return material;
+    }
+
+    public void setMaterial(Material material) {
+        this.material = material;
+        config.set("general.material", material.name());
+    }
+
+    public ConcurrentHashMap<Enchantment, Integer> getEnchantments() {
+        return enchantments;
     }
 
     public void setCustomModelData(List<Float> data) {
