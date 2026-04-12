@@ -8,6 +8,8 @@ import revxrsal.commands.bukkit.actor.BukkitCommandActor;
 
 public final class CustomItems extends JavaPlugin {
 
+
+
     @Override
     public void onEnable() {
         Lamp<BukkitCommandActor> lamp = BukkitLamp.builder(this).build();
