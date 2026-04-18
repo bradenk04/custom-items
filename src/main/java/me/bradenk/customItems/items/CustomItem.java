@@ -1,5 +1,6 @@
 package me.bradenk.customItems.items;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.core.io.WritingMode;
 import com.electronwill.nightconfig.toml.TomlWriter;
@@ -68,9 +69,11 @@ public class CustomItem {
     @Nullable
     public static CustomItem from(CommentedFileConfig config) {
 
-        Optional<HashMap<String, Integer>> enchantmentsRaw = config.getOptional("general.enchantments");
+        Optional<CommentedConfig> enchantmentsRaw = config.getOptional("general.enchantments");
         ConcurrentHashMap<Enchantment, Integer> enchantments = new ConcurrentHashMap<>();
-        enchantmentsRaw.ifPresent(stringIntegerHashMap -> stringIntegerHashMap.forEach((enchantName, level) -> {
+        enchantmentsRaw.ifPresent(enchantConfig -> enchantConfig.entrySet().forEach(entry -> {
+            String enchantName = entry.getKey();
+            int level = entry.getValue();
             NamespacedKey key;
             if (enchantName.contains(":")) {
                 String firstPart = enchantName.split(":")[0];
@@ -209,12 +212,12 @@ public class CustomItem {
         return unbreakable;
     }
 
-    private HashMap<String, Integer> enchantListToConfigurableList(ConcurrentHashMap<Enchantment, Integer> enchantments) {
-        HashMap<String, Integer> configurableEnchantments = new HashMap<>();
+    private CommentedConfig enchantListToConfigurableList(ConcurrentHashMap<Enchantment, Integer> enchantments) {
+        CommentedConfig configEnchants = CommentedConfig.inMemory();
         enchantments.forEach((enchant, level) -> {
-            configurableEnchantments.put(enchant.getKey().toString(), level);
+            configEnchants.set(enchant.getKey().toString(), level);
         });
-        return configurableEnchantments;
+        return configEnchants;
     }
 
     public void addEnchant(String enchant, Integer level) {
