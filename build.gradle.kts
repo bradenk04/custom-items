@@ -54,6 +54,7 @@ tasks {
     }
 
     shadowJar {
+        archiveClassifier.set("")
         relocate("org.bstats", project.group.toString() + "bstats")
         relocate("com.electronwill", project.group.toString() + "nightconfig")
         relocate("io.github.revxrsal", project.group.toString() + "lamp")
