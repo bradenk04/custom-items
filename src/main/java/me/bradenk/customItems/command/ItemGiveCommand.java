@@ -5,9 +5,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import revxrsal.commands.annotation.Command;
 import revxrsal.commands.bukkit.actor.BukkitCommandActor;
+import revxrsal.commands.bukkit.annotation.CommandPermission;
 
 public class ItemGiveCommand {
     @Command("item give")
+    @CommandPermission("customitems.item.give")
     public void give(BukkitCommandActor actor, CustomItem item) {
         if (!actor.isPlayer()) {
             actor.sendRawMessage("You must be a player to give an item!");

@@ -19,6 +19,7 @@ dependencies {
     implementation("io.github.revxrsal:lamp.common:4.0.0-rc.16")
     implementation("io.github.revxrsal:lamp.bukkit:4.0.0-rc.16")
     implementation("io.github.revxrsal:lamp.brigadier:4.0.0-rc.16")
+    implementation("org.bstats:bstats-bukkit:3.2.1")
 }
 
 paperPluginYaml {
@@ -50,5 +51,11 @@ tasks {
     }
     withType<JavaCompile> {
         options.compilerArgs.add("-parameters")
+    }
+
+    shadowJar {
+        relocate("org.bstats", project.group.toString() + "bstats")
+        relocate("com.electronwill", project.group.toString() + "nightconfig")
+        relocate("io.github.revxrsal", project.group.toString() + "lamp")
     }
 }
