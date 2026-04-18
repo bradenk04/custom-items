@@ -1,6 +1,8 @@
 package me.bradenk.customItems.items;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
+import com.electronwill.nightconfig.core.io.WritingMode;
+import com.electronwill.nightconfig.toml.TomlWriter;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import me.bradenk.customItems.CustomItems;
@@ -21,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
+import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -245,6 +248,9 @@ public class CustomItem {
             config.set("general.unbreakable", true);
         }
         config.save();
+        File configFile = config.getFile();
+        TomlWriter writer = new TomlWriter();
+        writer.write(config, configFile, WritingMode.REPLACE);
     }
 
     @SuppressWarnings("UnstableApiUsage")
