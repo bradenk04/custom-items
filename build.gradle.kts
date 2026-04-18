@@ -12,6 +12,8 @@ repositories {
     mavenCentral()
 }
 
+version = "1.0.0"
+
 dependencies {
     paperweight.paperDevBundle("26.1.1.build.+")
     implementation("com.electronwill.night-config:core:3.8.4")
