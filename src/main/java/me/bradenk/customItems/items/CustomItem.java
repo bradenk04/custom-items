@@ -505,7 +505,7 @@ public class CustomItem {
     }
 
     private Component markAbilityLore(Component line) {
-        return line.append(Component.text("ᶦ").color(NamedTextColor.BLACK));
+        return line.append(Component.text("ᵃ").color(NamedTextColor.BLACK));
     }
 
     private List<Component> buildAbilityLore() {

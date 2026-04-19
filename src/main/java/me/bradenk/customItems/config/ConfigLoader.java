@@ -85,4 +85,16 @@ public class ConfigLoader {
         config.load();
         return config;
     }
+
+    public static CommentedFileConfig getAbilitiesConfig() {
+        File configFile = new File(CustomItems.instance.getDataFolder(), "abilities.toml");
+
+        if (!configFile.exists()) {
+            CustomItems.instance.saveResource("abilities.toml", false);
+        }
+
+        CommentedFileConfig config = CommentedFileConfig.of(configFile);
+        config.load();
+        return config;
+    }
 }

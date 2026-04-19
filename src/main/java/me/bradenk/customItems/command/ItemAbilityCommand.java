@@ -1,9 +1,11 @@
 package me.bradenk.customItems.command;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
+import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import me.bradenk.customItems.CustomItems;
 import me.bradenk.customItems.abilities.AbilityDefinition;
 import me.bradenk.customItems.abilities.AbilityTrigger;
+import me.bradenk.customItems.config.ConfigLoader;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -49,14 +51,6 @@ public class ItemAbilityCommand {
             return;
         }
 
-        AbilityTrigger parsedTrigger;
-        try {
-            parsedTrigger = AbilityTrigger.valueOf(trigger.trim().toUpperCase());
-        } catch (IllegalArgumentException ex) {
-            player.sendMessage(Component.text("Invalid trigger. Use RIGHT_CLICK, LEFT_CLICK, HIT_ENTITY, KILL_ENTITY, HOLD", NamedTextColor.RED));
-            return;
-        }
-
         ItemMeta meta = held.getItemMeta();
         if (meta == null) {
             player.sendMessage(Component.text("That item cannot store abilities.", NamedTextColor.RED));
@@ -68,12 +62,34 @@ public class ItemAbilityCommand {
         List<AbilityDefinition> abilities = readAbilities(meta);
         String nextId = "ability" + (abilities.size() + 1);
 
+        CommentedConfig preset = getAbilityPreset(normalizedType);
+        if (preset == null) {
+            player.sendMessage(Component.text("Unknown ability preset: " + normalizedType, NamedTextColor.RED));
+            return;
+        }
+
+        AbilityTrigger parsedTrigger;
+        Object triggerRaw = preset.get("trigger");
+        try {
+            parsedTrigger = triggerRaw instanceof String s
+                    ? AbilityTrigger.valueOf(s.toUpperCase())
+                    : AbilityTrigger.RIGHT_CLICK;
+        } catch (IllegalArgumentException ex) {
+            parsedTrigger = AbilityTrigger.RIGHT_CLICK;
+        }
+
         CommentedConfig data = CommentedConfig.inMemory();
-        data.set("cooldown", 0);
+        preset.valueMap().forEach((key, value) -> {
+            if (!key.equals("type") && !key.equals("trigger")) {
+                data.set(key, value);
+            }
+        });
+
+        String presetType = preset.get("type") instanceof String s ? s.toLowerCase() : normalizedType;
 
         abilities.add(new AbilityDefinition(
                 nextId,
-                normalizedType,
+                presetType,
                 parsedTrigger,
                 data
         ));
@@ -189,7 +205,7 @@ public class ItemAbilityCommand {
 
         for (Component line : originalLore) {
             String plain = PlainTextComponentSerializer.plainText().serialize(line);
-            if (plain.contains("ᶦ")) {
+            if (plain.contains("ᵃ")) {
                 continue;
             }
             cleaned.add(line);
@@ -220,7 +236,7 @@ public class ItemAbilityCommand {
             String triggerName = toTitleCase(ability.trigger().name());
             String abilityName = toTitleCase(ability.id());
 
-            Component header = MINI_MESSAGE.deserialize("<gold>" + triggerName + ": <yellow>" + abilityName)
+            Component header = MINI_MESSAGE.deserialize("<gold>" + triggerName + ": <yellow>" + ability.type().substring(0, 1).toUpperCase() + ability.type().substring(1))
                     .decoration(TextDecoration.ITALIC, false);
             lines.add(markAbilityLore(header));
 
@@ -250,7 +266,7 @@ public class ItemAbilityCommand {
     }
 
     private Component markAbilityLore(Component line) {
-        return line.append(Component.text("ᶦ").color(NamedTextColor.BLACK));
+        return line.append(Component.text("ᵃ").color(NamedTextColor.BLACK));
     }
 
     private static String serializeAbilities(List<AbilityDefinition> abilities) {
@@ -384,5 +400,16 @@ public class ItemAbilityCommand {
         }
 
         return result.toString().trim();
+    }
+
+    private CommentedConfig getAbilityPreset(String type) {
+        CommentedFileConfig config = ConfigLoader.getAbilitiesConfig();
+        Object raw = config.get("abilities." + type.toLowerCase());
+
+        if (raw instanceof CommentedConfig preset) {
+            return preset;
+        }
+
+        return null;
     }
 }

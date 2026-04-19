@@ -2,7 +2,7 @@ id = "lightning_wand"
 
 [general]
 material = "BLAZE_ROD"
-display_name = "<gradient:light_blue:white>Lightning Wand"
+display_name = "<gradient:aqua:white>Lightning Wand"
 lore = [
     "<gray>A wand that smites targets"
 ]
