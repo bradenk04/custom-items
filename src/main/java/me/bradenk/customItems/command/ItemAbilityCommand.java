@@ -24,7 +24,6 @@ import revxrsal.commands.bukkit.annotation.CommandPermission;
 import java.util.ArrayList;
 import java.util.List;
 
-
 @Command("item ability")
 @CommandPermission("customitems.item.ability")
 public class ItemAbilityCommand {
@@ -32,67 +31,8 @@ public class ItemAbilityCommand {
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
     private static final NamespacedKey ABILITIES_KEY = new NamespacedKey(CustomItems.instance, "custom_item_abilities");
 
-    @Subcommand("add <type>")
-    public void addAbility(BukkitCommandActor actor, String type) {
-        if (!actor.isPlayer()) {
-            actor.sendRawMessage("You must be a player to use this command.");
-            return;
-        }
-
-        Player player = actor.asPlayer();
-        if (player == null) {
-            throw new IllegalStateException("Player is null after checking if it is a player!");
-        }
-
-        ItemStack held = player.getInventory().getItemInMainHand();
-        if (held.getType() == Material.AIR) {
-            player.sendMessage(Component.text("You must hold an item.", NamedTextColor.RED));
-            return;
-        }
-
-        ItemMeta meta = held.getItemMeta();
-        if (meta == null) {
-            player.sendMessage(Component.text("That item cannot store abilities.", NamedTextColor.RED));
-            return;
-        }
-
-        String normalizedType = type.trim().toLowerCase();
-        AbilityTrigger trigger = AbilityTrigger.RIGHT_CLICK;
-
-        List<AbilityDefinition> abilities = readAbilities(meta);
-        String nextId = "ability" + (abilities.size() + 1);
-
-        CommentedConfig data = CommentedConfig.inMemory();
-        data.set("description", toTitleCase(normalizedType));
-        data.set("cooldown", 0);
-
-        abilities.add(new AbilityDefinition(
-                nextId,
-                normalizedType,
-                trigger,
-                data
-        ));
-
-        meta.getPersistentDataContainer().set(
-                ABILITIES_KEY,
-                PersistentDataType.STRING,
-                serializeAbilities(abilities)
-        );
-
-        held.setItemMeta(meta);
-        refreshAbilityDisplayLore(held);
-        player.getInventory().setItemInMainHand(held);
-
-        player.sendMessage(
-                Component.text("Added ability ", NamedTextColor.GREEN)
-                        .append(Component.text(normalizedType, NamedTextColor.YELLOW))
-                        .append(Component.text(" with trigger ", NamedTextColor.GREEN))
-                        .append(Component.text(trigger.name(), NamedTextColor.AQUA))
-        );
-    }
-
-    @Subcommand("add <type> <trigger>")
-    public void addAbilityWithTrigger(BukkitCommandActor actor, String type, String trigger) {
+    @Subcommand("add <trigger> <type>")
+    public void addAbility(BukkitCommandActor actor, String trigger, String type) {
         if (!actor.isPlayer()) {
             actor.sendRawMessage("You must be a player to use this command.");
             return;
@@ -129,7 +69,6 @@ public class ItemAbilityCommand {
         String nextId = "ability" + (abilities.size() + 1);
 
         CommentedConfig data = CommentedConfig.inMemory();
-        data.set("description", toTitleCase(normalizedType));
         data.set("cooldown", 0);
 
         abilities.add(new AbilityDefinition(
@@ -278,18 +217,18 @@ public class ItemAbilityCommand {
         for (int i = 0; i < abilities.size(); i++) {
             AbilityDefinition ability = abilities.get(i);
 
-            String name = toTitleCase(ability.id());
+            String triggerName = toTitleCase(ability.trigger().name());
+            String abilityName = toTitleCase(ability.id());
 
-            Component header = MINI_MESSAGE.deserialize("<gold>Ability: <yellow>" + name)
+            Component header = MINI_MESSAGE.deserialize("<gold>" + triggerName + ": <yellow>" + abilityName)
                     .decoration(TextDecoration.ITALIC, false);
             lines.add(markAbilityLore(header));
 
             Object descRaw = ability.data().get("description");
-            if (descRaw instanceof String desc && !desc.isBlank()) {
-                Component descLine = MINI_MESSAGE.deserialize("<dark_gray>(" + desc + ")")
-                        .decoration(TextDecoration.ITALIC, false);
-                lines.add(markAbilityLore(descLine));
-            }
+            String description = (descRaw instanceof String desc && !desc.isBlank()) ? desc : "Ability Description";
+            Component descLine = MINI_MESSAGE.deserialize("<gray><italic>" + description)
+                    .decoration(TextDecoration.ITALIC, false);
+            lines.add(markAbilityLore(descLine));
 
             Object cooldownRaw = ability.data().get("cooldown");
             if (cooldownRaw instanceof Number cd && cd.doubleValue() > 0) {
@@ -297,7 +236,7 @@ public class ItemAbilityCommand {
                         ? String.valueOf(cd.intValue())
                         : String.valueOf(cd.doubleValue());
 
-                Component cooldownLine = MINI_MESSAGE.deserialize("<gray>Cooldown: <cyan>" + cooldownText)
+                Component cooldownLine = MINI_MESSAGE.deserialize("<dark_gray>Cooldown: <dark_aqua>" + cooldownText + "s")
                         .decoration(TextDecoration.ITALIC, false);
                 lines.add(markAbilityLore(cooldownLine));
             }
