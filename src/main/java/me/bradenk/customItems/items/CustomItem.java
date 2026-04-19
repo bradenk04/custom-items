@@ -7,6 +7,8 @@ import com.electronwill.nightconfig.toml.TomlWriter;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import me.bradenk.customItems.CustomItems;
+import me.bradenk.customItems.abilities.AbilityDefinition;
+import me.bradenk.customItems.abilities.AbilityTrigger;
 import me.bradenk.customItems.config.ConfigLoader;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -45,6 +47,8 @@ public class CustomItem {
     @Nullable
     private List<Float> customModelData;
     private boolean unbreakable;
+    @Nullable
+    private List<AbilityDefinition> abilities;
 
     public CustomItem(
             @NonNull CommentedFileConfig config,
@@ -54,7 +58,8 @@ public class CustomItem {
             @Nullable ConcurrentHashMap<Enchantment, Integer> enchantments,
             @Nullable List<Component> lore,
             @Nullable List<Float> cmd,
-            boolean unbreakable
+            boolean unbreakable,
+            @Nullable List<AbilityDefinition> abilities
     ) {
         this.config = config;
         this.id = id;
@@ -64,6 +69,7 @@ public class CustomItem {
         this.lore = lore;
         this.customModelData = cmd;
         this.unbreakable = unbreakable;
+        this.abilities = abilities;
     }
 
     @Nullable
@@ -132,6 +138,9 @@ public class CustomItem {
         if (unbreakableRaw.isPresent()) {
             unbreakable = unbreakableRaw.get();
         }
+
+        List<AbilityDefinition> abilities = parseAbilities(config);
+
         return new CustomItem(
                 config,
                 config.get("id"),
@@ -140,7 +149,8 @@ public class CustomItem {
                 enchantments,
                 lore,
                 customModelData,
-                unbreakable
+                unbreakable,
+                abilities
         );
     }
 
@@ -212,6 +222,10 @@ public class CustomItem {
         return unbreakable;
     }
 
+    public List<AbilityDefinition> getAbilities() {
+        return abilities;
+    }
+
     private CommentedConfig enchantListToConfigurableList(ConcurrentHashMap<Enchantment, Integer> enchantments) {
         CommentedConfig configEnchants = CommentedConfig.inMemory();
         enchantments.forEach((enchant, level) -> {
@@ -249,6 +263,19 @@ public class CustomItem {
         }
         if (unbreakable) {
             config.set("general.unbreakable", true);
+        }
+        if (abilities != null && !abilities.isEmpty()) {
+            List<CommentedConfig> abilityConfigs = new ArrayList<>();
+
+            for (AbilityDefinition ability : abilities) {
+                CommentedConfig abilityConfig = CommentedConfig.inMemory();
+                abilityConfig.set("type", ability.type());
+                abilityConfig.set("trigger", ability.trigger().name());
+                abilityConfig.set("data", ability.data());
+                abilityConfigs.add(abilityConfig);
+            }
+
+            config.set("abilities", abilityConfigs);
         }
         config.save();
         File configFile = config.getFile();
@@ -348,5 +375,39 @@ public class CustomItem {
 
         item.setItemMeta(meta);
         return item;
+    }
+
+    private static List<AbilityDefinition> parseAbilities(CommentedFileConfig config) {
+        Object raw = config.get("abilities");
+        if (!(raw instanceof List<?> list)) {
+            return new ArrayList<>();
+        }
+
+        List<AbilityDefinition> result = new ArrayList<>();
+
+        for (Object obj : list) {
+            if (!(obj instanceof CommentedConfig abilityConfig)) continue;
+
+            String type = abilityConfig.get("type");
+            String triggerRaw = abilityConfig.get("trigger");
+            if (type == null || triggerRaw == null) continue;
+
+            AbilityTrigger trigger;
+            try {
+                trigger = AbilityTrigger.valueOf(triggerRaw.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                CustomItems.instance.getLogger().warning("Invalid ability trigger: " + triggerRaw);
+                continue;
+            }
+
+            CommentedConfig data = abilityConfig.get("data");
+            if (data == null) {
+                data = CommentedConfig.inMemory();
+            }
+
+            result.add(new AbilityDefinition(type, trigger, data));
+        }
+
+        return result;
     }
 }

@@ -2,6 +2,7 @@ package me.bradenk.customItems;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import me.bradenk.customItems.abilities.AbilityRegistry;
 import me.bradenk.customItems.command.*;
 import me.bradenk.customItems.config.ConfigLoader;
 import me.bradenk.customItems.gui.ItemEditSession;
@@ -27,6 +28,7 @@ public final class CustomItems extends JavaPlugin {
     private ConcurrentHashMap<UUID, ItemEditSession> session = new ConcurrentHashMap<>();
     private ItemGUI itemGUI;
     private final int  bstatsPluginId = 30837;
+    private static AbilityRegistry abilityRegistry;
 
     @Override
     public void onEnable() {
@@ -52,11 +54,17 @@ public final class CustomItems extends JavaPlugin {
         lamp.register(new ItemEditorCommand());
         getServer().getPluginManager().registerEvents(new ClickListener(), this);
         itemGUI = new ItemGUI();
+        registerAbilities();
     }
 
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+    }
+
+    private void registerAbilities() {
+        abilityRegistry = new AbilityRegistry();
+
     }
 
     public ItemEditSession getSession(UUID uuid) {
@@ -73,6 +81,10 @@ public final class CustomItems extends JavaPlugin {
 
     public static Component colorCode(String value) {
         return LegacyComponentSerializer.legacyAmpersand().deserialize(value);
+    }
+
+    public static AbilityRegistry getAbilityRegistry() {
+        return abilityRegistry;
     }
 
 }
