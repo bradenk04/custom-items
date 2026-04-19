@@ -27,6 +27,7 @@ public class ConfigLoader {
                 throw new IllegalStateException("Failed to create plugin folder!");
             }
             CustomItems.instance.saveResource("config.toml", false);
+            CustomItems.instance.saveResource("abilities.toml", false);
         }
 
         if (!itemsConfigFolder.exists()) {
@@ -37,6 +38,7 @@ public class ConfigLoader {
             }
             CustomItems.instance.saveResource("items/cool_diamond_sword.toml", false);
             CustomItems.instance.saveResource("items/awesome_netherite_sword.toml", false);
+            CustomItems.instance.saveResource("items/lightning_wand.toml", false);
         }
 
         Path itemsConfigPath = itemsConfigFolder.toPath();

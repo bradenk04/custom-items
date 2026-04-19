@@ -15,6 +15,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.player.PlayerAnimationEvent;
+import org.bukkit.event.player.PlayerAnimationType;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -41,10 +43,17 @@ public class AbilityListener implements Listener {
         if (event.getAction().isRightClick()) {
             executeAbilities(player, stack, AbilityTrigger.RIGHT_CLICK, null);
         }
+    }
 
-        if (event.getAction().isLeftClick()) {
-            executeAbilities(player, stack, AbilityTrigger.LEFT_CLICK, null);
-        }
+    @EventHandler
+    public void onLeftClickAir(PlayerAnimationEvent event) {
+        if (event.getAnimationType() != PlayerAnimationType.ARM_SWING) return;
+
+        Player player = event.getPlayer();
+        ItemStack stack = player.getInventory().getItemInMainHand();
+        if (stack == null || stack.getType() == Material.AIR) return;
+
+        executeAbilities(player, stack, AbilityTrigger.LEFT_CLICK, null);
     }
 
     @EventHandler
@@ -53,6 +62,7 @@ public class AbilityListener implements Listener {
 
         ItemStack item = player.getInventory().getItemInMainHand();
         executeAbilities(player, item, AbilityTrigger.HIT_ENTITY, event.getEntity());
+        executeAbilities(player, item, AbilityTrigger.LEFT_CLICK, event.getEntity());
     }
 
     private void executeAbilities(Player player, ItemStack stack, AbilityTrigger trigger, Entity target) {
@@ -76,7 +86,7 @@ public class AbilityListener implements Listener {
             double cooldownSeconds = numberValue(ability.data().get("cooldown"), 0);
 
             Map<String, Long> playerCooldowns = cooldowns.computeIfAbsent(player.getUniqueId(), k -> new HashMap<>());
-            String cooldownKey = ability.id() + ":" + ability.type();
+            String cooldownKey = ability.id() + ":" + ability.type() + ":" + ability.trigger().name();
 
             if (cooldownSeconds > 0) {
                 long lastUse = playerCooldowns.getOrDefault(cooldownKey, 0L);

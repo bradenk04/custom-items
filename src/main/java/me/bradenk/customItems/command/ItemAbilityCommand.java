@@ -23,6 +23,7 @@ import revxrsal.commands.annotation.Subcommand;
 import revxrsal.commands.bukkit.actor.BukkitCommandActor;
 import revxrsal.commands.bukkit.annotation.CommandPermission;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,8 +34,17 @@ public class ItemAbilityCommand {
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
     private static final NamespacedKey ABILITIES_KEY = new NamespacedKey(CustomItems.instance, "custom_item_abilities");
 
-    @Subcommand("add <trigger> <type>")
-    public void addAbility(BukkitCommandActor actor, String trigger, String type) {
+    @Subcommand("add <type>")
+    public void addAbilityDefault(BukkitCommandActor actor, String type) {
+        handleAdd(actor, type, null);
+    }
+
+    @Subcommand("add <type> <trigger>")
+    public void addAbilityWithTrigger(BukkitCommandActor actor, String type, String trigger) {
+        handleAdd(actor, type, trigger);
+    }
+
+    private void handleAdd(BukkitCommandActor actor, String type, String trigger) {
         if (!actor.isPlayer()) {
             actor.sendRawMessage("You must be a player to use this command.");
             return;
@@ -59,9 +69,6 @@ public class ItemAbilityCommand {
 
         String normalizedType = type.trim().toLowerCase();
 
-        List<AbilityDefinition> abilities = readAbilities(meta);
-        String nextId = "ability" + (abilities.size() + 1);
-
         CommentedConfig preset = getAbilityPreset(normalizedType);
         if (preset == null) {
             player.sendMessage(Component.text("Unknown ability preset: " + normalizedType, NamedTextColor.RED));
@@ -69,18 +76,31 @@ public class ItemAbilityCommand {
         }
 
         AbilityTrigger parsedTrigger;
-        Object triggerRaw = preset.get("trigger");
-        try {
-            parsedTrigger = triggerRaw instanceof String s
-                    ? AbilityTrigger.valueOf(s.toUpperCase())
-                    : AbilityTrigger.RIGHT_CLICK;
-        } catch (IllegalArgumentException ex) {
-            parsedTrigger = AbilityTrigger.RIGHT_CLICK;
+
+        if (trigger != null && !trigger.isBlank()) {
+            try {
+                parsedTrigger = AbilityTrigger.valueOf(trigger.trim().toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                player.sendMessage(Component.text("Invalid trigger. Use RIGHT_CLICK, LEFT_CLICK, HIT_ENTITY, KILL_ENTITY, HOLD", NamedTextColor.RED));
+                return;
+            }
+        } else {
+            Object triggerRaw = preset.get("trigger");
+            try {
+                parsedTrigger = triggerRaw instanceof String s
+                        ? AbilityTrigger.valueOf(s.toUpperCase())
+                        : AbilityTrigger.RIGHT_CLICK;
+            } catch (IllegalArgumentException ex) {
+                parsedTrigger = AbilityTrigger.RIGHT_CLICK;
+            }
         }
+
+        List<AbilityDefinition> abilities = readAbilities(meta);
+        String nextId = "ability" + (abilities.size() + 1);
 
         CommentedConfig data = CommentedConfig.inMemory();
         preset.valueMap().forEach((key, value) -> {
-            if (!key.equals("type") && !key.equals("trigger")) {
+            if (!key.equals("type") && !key.equals("trigger") && !key.equals("description")) {
                 data.set(key, value);
             }
         });
@@ -106,7 +126,7 @@ public class ItemAbilityCommand {
 
         player.sendMessage(
                 Component.text("Added ability ", NamedTextColor.GREEN)
-                        .append(Component.text(normalizedType, NamedTextColor.YELLOW))
+                        .append(Component.text(presetType, NamedTextColor.YELLOW))
                         .append(Component.text(" with trigger ", NamedTextColor.GREEN))
                         .append(Component.text(parsedTrigger.name(), NamedTextColor.AQUA))
         );
@@ -273,6 +293,7 @@ public class ItemAbilityCommand {
         List<String> entries = new ArrayList<>();
 
         for (AbilityDefinition ability : abilities) {
+            String text = stringValue(ability.data().get("text"));
             String description = stringValue(ability.data().get("description"));
             String cooldown = String.valueOf(numberValue(ability.data().get("cooldown"), 0));
 
@@ -280,7 +301,8 @@ public class ItemAbilityCommand {
                     + escape(ability.type()) + ";"
                     + escape(ability.trigger().name()) + ";"
                     + escape(description) + ";"
-                    + escape(cooldown);
+                    + escape(cooldown) + ";"
+                    + escape(text);
 
             entries.add(entry);
         }
@@ -296,7 +318,7 @@ public class ItemAbilityCommand {
         for (String entry : entries) {
             if (entry.isBlank()) continue;
 
-            String[] parts = splitEscaped(entry, ';', 5);
+            String[] parts = splitEscaped(entry, ';', 6);
             if (parts.length < 5) continue;
 
             String id = unescape(parts[0]);
@@ -304,6 +326,8 @@ public class ItemAbilityCommand {
             String triggerRaw = unescape(parts[2]);
             String description = unescape(parts[3]);
             String cooldownRaw = unescape(parts[4]);
+            String text = unescape(parts[5]);
+
 
             AbilityTrigger trigger;
             try {
@@ -315,6 +339,10 @@ public class ItemAbilityCommand {
             CommentedConfig data = CommentedConfig.inMemory();
             if (!description.isBlank()) {
                 data.set("description", description);
+            }
+
+            if (!text.isBlank()) {
+                data.set("text", text);
             }
 
             try {
