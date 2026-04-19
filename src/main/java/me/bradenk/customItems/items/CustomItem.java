@@ -265,17 +265,17 @@ public class CustomItem {
             config.set("general.unbreakable", true);
         }
         if (abilities != null && !abilities.isEmpty()) {
-            List<CommentedConfig> abilityConfigs = new ArrayList<>();
+            CommentedConfig abilitiesSection = CommentedConfig.inMemory();
 
             for (AbilityDefinition ability : abilities) {
                 CommentedConfig abilityConfig = CommentedConfig.inMemory();
+                ability.data().valueMap().forEach(abilityConfig::set);
                 abilityConfig.set("type", ability.type());
                 abilityConfig.set("trigger", ability.trigger().name());
-                abilityConfig.set("data", ability.data());
-                abilityConfigs.add(abilityConfig);
+                abilitiesSection.set(ability.id(), abilityConfig);
             }
 
-            config.set("abilities", abilityConfigs);
+            config.set("abilities", abilitiesSection);
         }
         config.save();
         File configFile = config.getFile();
@@ -352,6 +352,14 @@ public class CustomItem {
             }
         }
 
+        List<Component> abilityLore = buildAbilityLore();
+        if (!abilityLore.isEmpty()) {
+            if (!finalLore.isEmpty()) {
+                finalLore.add(markAbilityLore(Component.text(" ").decoration(TextDecoration.ITALIC, false)));
+            }
+            finalLore.addAll(abilityLore);
+        }
+
         if (!finalLore.isEmpty()) {
             meta.lore(finalLore);
         }
@@ -379,35 +387,95 @@ public class CustomItem {
 
     private static List<AbilityDefinition> parseAbilities(CommentedFileConfig config) {
         Object raw = config.get("abilities");
-        if (!(raw instanceof List<?> list)) {
+
+        if (!(raw instanceof CommentedConfig abilitiesSection)) {
             return new ArrayList<>();
         }
 
-        List<AbilityDefinition> result = new ArrayList<>();
+        List<AbilityDefinition> abilities = new ArrayList<>();
 
-        for (Object obj : list) {
+        for (String key : abilitiesSection.valueMap().keySet()) {
+            Object obj = abilitiesSection.get(key);
+
             if (!(obj instanceof CommentedConfig abilityConfig)) continue;
 
             String type = abilityConfig.get("type");
             String triggerRaw = abilityConfig.get("trigger");
+
             if (type == null || triggerRaw == null) continue;
 
             AbilityTrigger trigger;
             try {
                 trigger = AbilityTrigger.valueOf(triggerRaw.toUpperCase());
             } catch (IllegalArgumentException e) {
-                CustomItems.instance.getLogger().warning("Invalid ability trigger: " + triggerRaw);
+                CustomItems.instance.getLogger().warning("Invalid trigger: " + triggerRaw);
                 continue;
             }
 
-            CommentedConfig data = abilityConfig.get("data");
-            if (data == null) {
-                data = CommentedConfig.inMemory();
-            }
-
-            result.add(new AbilityDefinition(type, trigger, data));
+            abilities.add(new AbilityDefinition(key, type, trigger, abilityConfig));
         }
 
-        return result;
+        return abilities;
+    }
+
+    private static String toTitleCase(String input) {
+        if (input == null || input.isBlank()) return "";
+
+        String[] parts = input.split("_");
+        StringBuilder result = new StringBuilder();
+
+        for (String part : parts) {
+            if (part.isEmpty()) continue;
+
+            result.append(Character.toUpperCase(part.charAt(0)))
+                    .append(part.substring(1).toLowerCase())
+                    .append(" ");
+        }
+
+        return result.toString().trim();
+    }
+
+    private Component markAbilityLore(Component line) {
+        return line.append(Component.text("ᶦ").color(NamedTextColor.BLACK));
+    }
+
+    private List<Component> buildAbilityLore() {
+        List<Component> lines = new ArrayList<>();
+
+        if (abilities == null || abilities.isEmpty()) return lines;
+
+        for (int i = 0; i < abilities.size(); i++) {
+            AbilityDefinition ability = abilities.get(i);
+
+            String name = toTitleCase(ability.id());
+
+            Component header = miniMessage.deserialize("<gold>Ability: <yellow>" + name)
+                    .decoration(TextDecoration.ITALIC, false);
+            lines.add(markAbilityLore(header));
+
+            Object descRaw = ability.data().get("description");
+            if (descRaw instanceof String desc && !desc.isBlank()) {
+                Component descLine = miniMessage.deserialize("<dark_gray>(" + desc + ")")
+                        .decoration(TextDecoration.ITALIC, false);
+                lines.add(markAbilityLore(descLine));
+            }
+
+            Object cooldownRaw = ability.data().get("cooldown");
+            if (cooldownRaw instanceof Number cd && cd.doubleValue() > 0) {
+                String cdText = (cd.doubleValue() == cd.intValue())
+                        ? String.valueOf(cd.intValue())
+                        : String.valueOf(cd.doubleValue());
+
+                Component cdLine = miniMessage.deserialize("<gray>Cooldown: <cyan>" + cdText)
+                        .decoration(TextDecoration.ITALIC, false);
+                lines.add(markAbilityLore(cdLine));
+            }
+
+            if (i < abilities.size() - 1) {
+                lines.add(markAbilityLore(Component.text(" ").decoration(TextDecoration.ITALIC, false)));
+            }
+        }
+
+        return lines;
     }
 }

@@ -3,11 +3,14 @@ package me.bradenk.customItems;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import me.bradenk.customItems.abilities.AbilityRegistry;
+import me.bradenk.customItems.abilities.impl.Lightning;
+import me.bradenk.customItems.abilities.impl.Message;
 import me.bradenk.customItems.command.*;
 import me.bradenk.customItems.config.ConfigLoader;
 import me.bradenk.customItems.gui.ItemEditSession;
 import me.bradenk.customItems.gui.ItemGUI;
 import me.bradenk.customItems.items.CustomItem;
+import me.bradenk.customItems.listeners.AbilityListener;
 import me.bradenk.customItems.listeners.ClickListener;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -52,7 +55,9 @@ public final class CustomItems extends JavaPlugin {
         lamp.register(new ItemEditCommand());
         lamp.register(new ItemGiveCommand());
         lamp.register(new ItemEditorCommand());
+        lamp.register(new ItemAbilityCommand());
         getServer().getPluginManager().registerEvents(new ClickListener(), this);
+        getServer().getPluginManager().registerEvents(new AbilityListener(), this);
         itemGUI = new ItemGUI();
         registerAbilities();
     }
@@ -64,7 +69,8 @@ public final class CustomItems extends JavaPlugin {
 
     private void registerAbilities() {
         abilityRegistry = new AbilityRegistry();
-
+        abilityRegistry.register(new Lightning());
+        abilityRegistry.register(new Message());
     }
 
     public ItemEditSession getSession(UUID uuid) {

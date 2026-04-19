@@ -1,16 +1,19 @@
 package me.bradenk.customItems.command;
 
 import me.bradenk.customItems.CustomItems;
+import me.bradenk.customItems.abilities.AbilityDefinition;
 import me.bradenk.customItems.config.ConfigLoader;
 import me.bradenk.customItems.gui.ItemEditSession;
 import me.bradenk.customItems.items.CustomItem;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import revxrsal.commands.annotation.Command;
 import revxrsal.commands.annotation.Subcommand;
 import revxrsal.commands.bukkit.actor.BukkitCommandActor;
@@ -95,6 +98,8 @@ public class ItemEditorCommand {
 
         boolean unbreakable = meta != null && meta.isUnbreakable();
 
+        List<AbilityDefinition> abilities = getAbilitiesFromHeldItem(held);
+
         ItemEditSession session = new ItemEditSession(
                 id,
                 name,
@@ -103,10 +108,38 @@ public class ItemEditorCommand {
                 enchants,
                 lore,
                 cmd,
-                unbreakable
+                unbreakable,
+                abilities
         );
 
         CustomItems.instance.getSession().put(player.getUniqueId(), session);
         CustomItems.instance.getItemGUI().openGUI(player, id);
+    }
+
+    private List<AbilityDefinition> getAbilitiesFromHeldItem(ItemStack stack) {
+        if (stack == null || !stack.hasItemMeta()) {
+            return new ArrayList<>();
+        }
+
+        ItemMeta meta = stack.getItemMeta();
+        if (meta == null) {
+            return new ArrayList<>();
+        }
+
+        String itemId = meta.getPersistentDataContainer().get(
+                new NamespacedKey(CustomItems.instance, "custom_item_id"),
+                PersistentDataType.STRING
+        );
+
+        if (itemId == null || itemId.isBlank()) {
+            return new ArrayList<>();
+        }
+
+        CustomItem customItem = ConfigLoader.customItems.get(itemId);
+        if (customItem == null || customItem.getAbilities() == null) {
+            return new ArrayList<>();
+        }
+
+        return new ArrayList<>(customItem.getAbilities());
     }
 }
