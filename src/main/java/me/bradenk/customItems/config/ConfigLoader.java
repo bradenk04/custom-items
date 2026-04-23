@@ -27,6 +27,7 @@ public class ConfigLoader {
                 throw new IllegalStateException("Failed to create plugin folder!");
             }
             CustomItems.instance.saveResource("config.toml", false);
+            CustomItems.instance.saveResource("abilities.toml", false);
         }
 
         if (!itemsConfigFolder.exists()) {
@@ -37,6 +38,7 @@ public class ConfigLoader {
             }
             CustomItems.instance.saveResource("items/cool_diamond_sword.toml", false);
             CustomItems.instance.saveResource("items/awesome_netherite_sword.toml", false);
+            CustomItems.instance.saveResource("items/lightning_wand.toml", false);
         }
 
         Path itemsConfigPath = itemsConfigFolder.toPath();
@@ -79,6 +81,18 @@ public class ConfigLoader {
 
         if (!configFile.exists()) {
             CustomItems.instance.saveResource("config.toml", false);
+        }
+
+        CommentedFileConfig config = CommentedFileConfig.of(configFile);
+        config.load();
+        return config;
+    }
+
+    public static CommentedFileConfig getAbilitiesConfig() {
+        File configFile = new File(CustomItems.instance.getDataFolder(), "abilities.toml");
+
+        if (!configFile.exists()) {
+            CustomItems.instance.saveResource("abilities.toml", false);
         }
 
         CommentedFileConfig config = CommentedFileConfig.of(configFile);

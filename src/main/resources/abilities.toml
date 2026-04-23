@@ -1,0 +1,12 @@
+[abilities.lightning]
+type = "lightning"
+trigger = "RIGHT_CLICK"
+description = "Calls lightning from the sky"
+cooldown = 5
+
+[abilities.message]
+type = "message"
+trigger = "LEFT_CLICK"
+description = "Sends a message"
+cooldown = 0
+text = "<gold>Hello there"

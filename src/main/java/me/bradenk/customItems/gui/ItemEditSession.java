@@ -2,6 +2,7 @@ package me.bradenk.customItems.gui;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import me.bradenk.customItems.CustomItems;
+import me.bradenk.customItems.abilities.AbilityDefinition;
 import me.bradenk.customItems.config.ConfigLoader;
 import me.bradenk.customItems.items.CustomItem;
 import net.kyori.adventure.text.Component;
@@ -24,6 +25,7 @@ public class ItemEditSession {
     private List<Component> lore;
     private List<Float> customModelData;
     private boolean unbreakable;
+    private List<AbilityDefinition> abilities;
 
     public ItemEditSession(
             String id,
@@ -33,7 +35,8 @@ public class ItemEditSession {
             ConcurrentHashMap<Enchantment, Integer> enchantments,
             List<Component> lore,
             List<Float> cmd,
-            boolean unbreakable
+            boolean unbreakable,
+            List<AbilityDefinition> abilities
     ) {
         this.id = id;
         this.displayName = name == null ? Component.text("None") : name;
@@ -113,7 +116,7 @@ public class ItemEditSession {
             configFile.createNewFile();
         }
         CommentedFileConfig config = CommentedFileConfig.of(configFile);
-        CustomItem item = new CustomItem(config, id, displayName, material, enchantments, lore, customModelData, unbreakable);
+        CustomItem item = new CustomItem(config, id, displayName, material, enchantments, lore, customModelData, unbreakable, abilities);
         item.save();
         ConfigLoader.customItems.put(id, item);
         return item;

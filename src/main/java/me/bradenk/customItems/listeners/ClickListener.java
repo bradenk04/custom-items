@@ -1,6 +1,7 @@
 package me.bradenk.customItems.listeners;
 
 import me.bradenk.customItems.CustomItems;
+import me.bradenk.customItems.abilities.AbilityTrigger;
 import me.bradenk.customItems.gui.ItemEditSession;
 import me.bradenk.customItems.items.CustomItem;
 import net.kyori.adventure.key.Key;
@@ -21,6 +22,7 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;

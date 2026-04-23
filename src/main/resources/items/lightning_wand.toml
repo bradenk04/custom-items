@@ -1,0 +1,18 @@
+id = "lightning_wand"
+
+[general]
+material = "BLAZE_ROD"
+display_name = "<gradient:aqua:white>Lightning Wand"
+lore = [
+    "<gray>A wand that smites targets"
+]
+unbreakable = true
+
+[general.enchantments]
+"minecraft:unbreaking" = 3
+
+[abilities.lightning]
+type = "lightning"
+trigger = "RIGHT_CLICK"
+description = "Calls lightning on your target"
+cooldown = 8

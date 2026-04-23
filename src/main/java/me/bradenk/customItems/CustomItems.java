@@ -2,11 +2,15 @@ package me.bradenk.customItems;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import me.bradenk.customItems.abilities.AbilityRegistry;
+import me.bradenk.customItems.abilities.impl.Lightning;
+import me.bradenk.customItems.abilities.impl.Message;
 import me.bradenk.customItems.command.*;
 import me.bradenk.customItems.config.ConfigLoader;
 import me.bradenk.customItems.gui.ItemEditSession;
 import me.bradenk.customItems.gui.ItemGUI;
 import me.bradenk.customItems.items.CustomItem;
+import me.bradenk.customItems.listeners.AbilityListener;
 import me.bradenk.customItems.listeners.ClickListener;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -27,6 +31,7 @@ public final class CustomItems extends JavaPlugin {
     private ConcurrentHashMap<UUID, ItemEditSession> session = new ConcurrentHashMap<>();
     private ItemGUI itemGUI;
     private final int  bstatsPluginId = 30837;
+    private static AbilityRegistry abilityRegistry;
 
     @Override
     public void onEnable() {
@@ -50,13 +55,22 @@ public final class CustomItems extends JavaPlugin {
         lamp.register(new ItemEditCommand());
         lamp.register(new ItemGiveCommand());
         lamp.register(new ItemEditorCommand());
+        lamp.register(new ItemAbilityCommand());
         getServer().getPluginManager().registerEvents(new ClickListener(), this);
+        getServer().getPluginManager().registerEvents(new AbilityListener(), this);
         itemGUI = new ItemGUI();
+        registerAbilities();
     }
 
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+    }
+
+    private void registerAbilities() {
+        abilityRegistry = new AbilityRegistry();
+        abilityRegistry.register(new Lightning());
+        abilityRegistry.register(new Message());
     }
 
     public ItemEditSession getSession(UUID uuid) {
@@ -73,6 +87,10 @@ public final class CustomItems extends JavaPlugin {
 
     public static Component colorCode(String value) {
         return LegacyComponentSerializer.legacyAmpersand().deserialize(value);
+    }
+
+    public static AbilityRegistry getAbilityRegistry() {
+        return abilityRegistry;
     }
 
 }
